@@ -26,10 +26,14 @@ public class Concert {
             name = "CONCERT_DATES",
             joinColumns = @JoinColumn(name = "CONCERT_ID")
     )
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
     @Column(name = "DATE")
     private Set<LocalDateTime> dates;
 
     @ManyToMany(cascade = {CascadeType.PERSIST})
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
     @JoinTable(name = "CONCERT_PERFORMER",
             joinColumns = @JoinColumn(name = "CONCERT_ID"),
             inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
@@ -41,11 +45,14 @@ public class Concert {
     public Concert() {
     }
 
-    public Concert(String title, String imageName, String blurb, Set<Performer> performers, Set<Booking> bookings) {
+    public Concert(String title, String imageName, String blurb,
+                   Set<LocalDateTime> dates, Set<Performer> performers,
+                   Set<Booking> bookings) {
         this.title = title;
         this.imageName = imageName;
         this.blurb = blurb;
         this.performers = performers;
+        this.dates = dates;
         this.bookings = bookings;
     }
 
