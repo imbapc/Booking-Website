@@ -353,8 +353,7 @@ public class ConcertResource {
 
     private boolean checkConcertExists(BookingRequestDTO bookingRequestDTO) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        EntityTransaction tx = null;
-        List<Concert> concerts = new ArrayList<>();
+        List<Concert> concerts;
         try {
             TypedQuery<Concert> concertsQuery = em.createQuery(
                     "SELECT c FROM Concert c WHERE c.id = :concertId AND :concertDate member of c.dates",
