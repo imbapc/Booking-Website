@@ -1,30 +1,31 @@
 package asg.concert.service.services;
 
-import asg.concert.common.dto.ConcertDTO;
-import asg.concert.common.dto.ConcertSummaryDTO;
-import asg.concert.common.dto.PerformerDTO;
-import asg.concert.common.dto.UserDTO;
-import asg.concert.service.domain.Concert;
-import asg.concert.service.domain.Performer;
-import asg.concert.service.domain.User;
+import asg.concert.common.dto.*;
+import asg.concert.service.domain.*;
+import asg.concert.service.mapper.BookingMapper;
 import asg.concert.service.mapper.ConcertMapper;
 import asg.concert.service.mapper.PerformerMapper;
+import asg.concert.service.mapper.SeatMapper;
+import asg.concert.service.util.TheatreLayout;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Path("/concert-service")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConcertResource {
+
+    @Context
+    private UriInfo uriInfo;
 
     @GET
     @Path("/concerts")
@@ -187,7 +188,129 @@ public class ConcertResource {
         }
 
         // Generate cookie and return Ok
-        NewCookie cookie = new NewCookie("auth", UUID.randomUUID().toString());
+        NewCookie cookie = new NewCookie("auth", userDTO.getUsername());
         return Response.ok().cookie(cookie).build();
+    }
+
+    @GET
+    @Path("/bookings/{id}")
+    public Response retrieveBookingById(@PathParam("id") long bookingId,
+                                        @CookieParam("auth") Cookie auth) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Booking> bookings;
+        BookingDTO result;
+        try {
+            TypedQuery<Booking> bookingQuery = em
+                    .createQuery(
+                            "SELECT b FROM Booking b " +
+                                    "WHERE b.id = :bookingId",
+                            Booking.class)
+                    .setParameter("bookingId", bookingId);
+            bookings = bookingQuery.getResultList();
+            if (bookings.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            Booking booking = bookings.get(0);
+            if (!booking.getBookingUser().equals(auth.getValue())) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+            result = BookingMapper.toBookingDto(booking);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
+
+    }
+
+    @POST
+    @Path("/bookings")
+    public Response bookConcert(BookingRequestDTO bookingRequestDTO,
+                                @CookieParam("auth") Cookie auth) {
+        if (auth == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
+        // Create seats
+        List<Seat> seats = new ArrayList<>();
+        for (String seatLabel : bookingRequestDTO.getSeatLabels()) {
+            char rowLabel = seatLabel.charAt(0);
+            int rowNum = rowLabel - 'A' + 1;
+            for (TheatreLayout.PriceBand priceBand : TheatreLayout.PRICE_BANDS) {
+                if (rowNum <= priceBand.numRows) {
+                    seats.add(new Seat(seatLabel, true, bookingRequestDTO.getDate(), priceBand.price));
+                    break;
+                } else {
+                    rowNum = rowNum - priceBand.numRows;
+                }
+            }
+        }
+
+        // Create booking
+        Booking booking = new Booking(
+                bookingRequestDTO.getConcertId(),
+                bookingRequestDTO.getDate(),
+                auth.getValue(), seats);
+
+        // Persist booking
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+        try {
+            tx = em.getTransaction();
+            tx.begin();
+            em.persist(booking);
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
+        URI u = URI.create(uriInfo.getRequestUri() + "/" + booking.getId());
+        return Response.created(u).build();
+    }
+
+    @GET
+    @Path("/seats/{date}")
+    public Response retrieveBookedSeats(@PathParam("date") String dateTime,
+                                        @QueryParam("status") String status) {
+        LocalDateTime dateToQuery = LocalDateTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        Boolean isBooked = status.equals("Booked");
+
+        // retrieve seats in a given date
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+        List<Seat> allSeats;
+        List<SeatDTO> result = new ArrayList<>();
+        try {
+            tx = em.getTransaction();
+            tx.begin();
+            TypedQuery<Seat> seatQuery = em
+                    .createQuery(
+                            "SELECT s FROM Seat s " +
+                                    "WHERE s.date = :date " +
+                                    "AND s.isBooked = :isBooked",
+                            Seat.class)
+                    .setParameter("date", dateToQuery)
+                    .setParameter("isBooked", isBooked);
+            allSeats = seatQuery.getResultList();
+            for (Seat seat : allSeats) {
+                result.add(SeatMapper.toSeatDto(seat));
+            }
+            tx.setRollbackOnly();
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
     }
 }
