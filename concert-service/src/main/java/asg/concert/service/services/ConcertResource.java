@@ -193,6 +193,38 @@ public class ConcertResource {
     }
 
     @GET
+    @Path("/bookings")
+    public Response retrieveBookings(@CookieParam("auth") Cookie auth) {
+        if (auth == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Booking> bookings;
+        List<BookingDTO> results = new ArrayList<>();
+        try {
+            TypedQuery<Booking> bookingQuery = em
+                    .createQuery(
+                            "SELECT b FROM Booking b " +
+                                    "WHERE b.bookingUser = :username",
+                            Booking.class)
+                    .setParameter("username", auth.getValue());
+            bookings = bookingQuery.getResultList();
+            if (bookings.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            for (Booking booking : bookings) {
+                results.add(BookingMapper.toBookingDto(booking));
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(results).build();
+    }
+
+    @GET
     @Path("/bookings/{id}")
     public Response retrieveBookingById(@PathParam("id") long bookingId,
                                         @CookieParam("auth") Cookie auth) {
@@ -221,7 +253,6 @@ public class ConcertResource {
             }
         }
         return Response.ok().entity(result).build();
-
     }
 
     @POST
@@ -230,6 +261,11 @@ public class ConcertResource {
                                 @CookieParam("auth") Cookie auth) {
         if (auth == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
+        // check concert is scheduled
+        if (!checkConcertExists(bookingRequestDTO)) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
         // Create seats
@@ -312,5 +348,25 @@ public class ConcertResource {
             }
         }
         return Response.ok().entity(result).build();
+    }
+
+
+    private boolean checkConcertExists(BookingRequestDTO bookingRequestDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+        List<Concert> concerts = new ArrayList<>();
+        try {
+            TypedQuery<Concert> concertsQuery = em.createQuery(
+                    "SELECT c FROM Concert c WHERE c.id = :concertId AND :concertDate member of c.dates",
+                    Concert.class)
+                    .setParameter("concertId", bookingRequestDTO.getConcertId())
+                    .setParameter("concertDate", bookingRequestDTO.getDate());
+            concerts = concertsQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return !concerts.isEmpty();
     }
 }
