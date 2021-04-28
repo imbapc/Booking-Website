@@ -156,6 +156,7 @@ public class ConcertResource {
         EntityTransaction tx = null;
         List<User> userResults;
         User matchedUser;
+
         // Test if user exist
         try {
             tx = em.getTransaction();
@@ -210,9 +211,6 @@ public class ConcertResource {
                             Booking.class)
                     .setParameter("username", auth.getValue());
             bookings = bookingQuery.getResultList();
-            if (bookings.isEmpty()) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
             for (Booking booking : bookings) {
                 results.add(BookingMapper.toBookingDto(booking));
             }
@@ -263,9 +261,15 @@ public class ConcertResource {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        // check concert is scheduled
+        // Check concert exists
         if (!checkConcertExists(bookingRequestDTO)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+
+        // Check seats available
+        if (!checkSeatAvailable(bookingRequestDTO)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
 
         // Create seats
@@ -350,7 +354,6 @@ public class ConcertResource {
         return Response.ok().entity(result).build();
     }
 
-
     private boolean checkConcertExists(BookingRequestDTO bookingRequestDTO) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         List<Concert> concerts;
@@ -367,5 +370,24 @@ public class ConcertResource {
             }
         }
         return !concerts.isEmpty();
+    }
+
+    private boolean checkSeatAvailable(BookingRequestDTO bookingRequestDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<String> seatLables = bookingRequestDTO.getSeatLabels();
+        List<Booking> bookings = new ArrayList<>();
+        try {
+            TypedQuery<Booking> bookingQuery = em.createQuery(
+                    "SELECT b FROM Booking b JOIN b.seats s WHERE b.concertId = :concertId AND s.label in :seatLables",
+                    Booking.class)
+                    .setParameter("concertId", bookingRequestDTO.getConcertId())
+                    .setParameter("seatLables", seatLables);
+            bookings = bookingQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return bookings.isEmpty();
     }
 }
