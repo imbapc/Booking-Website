@@ -375,7 +375,7 @@ public class ConcertResource {
     private boolean checkSeatAvailable(BookingRequestDTO bookingRequestDTO) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         List<String> seatLables = bookingRequestDTO.getSeatLabels();
-        List<Booking> bookings = new ArrayList<>();
+        List<Booking> bookings;
         try {
             TypedQuery<Booking> bookingQuery = em.createQuery(
                     "SELECT b FROM Booking b JOIN b.seats s WHERE b.concertId = :concertId AND s.label in :seatLables",
