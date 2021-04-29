@@ -6,7 +6,6 @@ import asg.concert.service.mapper.BookingMapper;
 import asg.concert.service.mapper.ConcertMapper;
 import asg.concert.service.mapper.PerformerMapper;
 import asg.concert.service.mapper.SeatMapper;
-import asg.concert.service.util.TheatreLayout;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -272,19 +271,21 @@ public class ConcertResource {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
-        // Create seats
-        List<Seat> seats = new ArrayList<>();
-        for (String seatLabel : bookingRequestDTO.getSeatLabels()) {
-            char rowLabel = seatLabel.charAt(0);
-            int rowNum = rowLabel - 'A' + 1;
-            for (TheatreLayout.PriceBand priceBand : TheatreLayout.PRICE_BANDS) {
-                if (rowNum <= priceBand.numRows) {
-                    seats.add(new Seat(seatLabel, true, bookingRequestDTO.getDate(), priceBand.price));
-                    break;
-                } else {
-                    rowNum = rowNum - priceBand.numRows;
-                }
-            }
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+
+        // Find seats
+        TypedQuery<Seat> seatQuery = em
+                .createQuery(
+                        "SELECT s FROM Seat s " +
+                                "WHERE s.date = :date " +
+                                "AND s.label in :seatLabels",
+                        Seat.class)
+                .setParameter("date", bookingRequestDTO.getDate())
+                .setParameter("seatLabels", bookingRequestDTO.getSeatLabels());
+        List<Seat> seats = seatQuery.getResultList();
+        for (Seat seat : seats) {
+            seat.setBooked(true);
         }
 
         // Create booking
@@ -294,8 +295,6 @@ public class ConcertResource {
                 auth.getValue(), seats);
 
         // Persist booking
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-        EntityTransaction tx = null;
         try {
             tx = em.getTransaction();
             tx.begin();
@@ -305,7 +304,7 @@ public class ConcertResource {
             if (tx != null && tx.isActive()) {
                 tx.rollback();
             }
-            if (em != null && em.isOpen()) {
+            if (em.isOpen()) {
                 em.close();
             }
         }
@@ -318,27 +317,33 @@ public class ConcertResource {
     @Path("/seats/{date}")
     public Response retrieveBookedSeats(@PathParam("date") String dateTime,
                                         @QueryParam("status") String status) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+
+        // Set query
         LocalDateTime dateToQuery = LocalDateTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        Boolean isBooked = status.equals("Booked");
+        TypedQuery<Seat> seatQuery;
+
+        if (status.equals("Any")) {
+            seatQuery = em
+                    .createQuery("SELECT s FROM Seat s WHERE s.date = :date", Seat.class)
+                    .setParameter("date", dateToQuery);
+        } else {
+            seatQuery = em
+                    .createQuery(
+                            "SELECT s FROM Seat s WHERE s.date = :date AND s.isBooked = :isBooked", Seat.class)
+                    .setParameter("date", dateToQuery)
+                    .setParameter("isBooked", status.equals("Booked"));
+        }
 
         // retrieve seats in a given date
-        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Seat> seatsResult;
         EntityTransaction tx = null;
-        List<Seat> allSeats;
         List<SeatDTO> result = new ArrayList<>();
         try {
             tx = em.getTransaction();
             tx.begin();
-            TypedQuery<Seat> seatQuery = em
-                    .createQuery(
-                            "SELECT s FROM Seat s " +
-                                    "WHERE s.date = :date " +
-                                    "AND s.isBooked = :isBooked",
-                            Seat.class)
-                    .setParameter("date", dateToQuery)
-                    .setParameter("isBooked", isBooked);
-            allSeats = seatQuery.getResultList();
-            for (Seat seat : allSeats) {
+            seatsResult = seatQuery.getResultList();
+            for (Seat seat : seatsResult) {
                 result.add(SeatMapper.toSeatDto(seat));
             }
             tx.setRollbackOnly();
@@ -347,7 +352,7 @@ public class ConcertResource {
             if (tx != null && tx.isActive()) {
                 tx.rollback();
             }
-            if (em != null && em.isOpen()) {
+            if (em.isOpen()) {
                 em.close();
             }
         }
