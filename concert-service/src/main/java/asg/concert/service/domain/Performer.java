@@ -1,4 +1,4 @@
-package lab.end2end.concert.domain;
+package asg.concert.service.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
