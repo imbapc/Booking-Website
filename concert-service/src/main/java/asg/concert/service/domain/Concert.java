@@ -7,7 +7,7 @@ import java.util.Set;
 
 import javax.persistence.*;
 import concert-common.src.main.java.asg.concert.common.jackson.LocalDateTimeDeserializer;
-
+import concert-common.src.main.java.asg.concert.common.jackson.LocalDateTimeSerializer;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
