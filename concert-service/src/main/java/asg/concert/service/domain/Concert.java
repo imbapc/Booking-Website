@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.*;
+import concert-common.src.main.java.asg.concert.common.jackson.LocalDateTimeDeserializer;
+
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -19,7 +21,7 @@ public class Concert implements Comparable<Concert> {
     private LocalDateTime date;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade=CascadeType.ALL)
-    protected Performer performer;
+    protected Performer performer;s
 
     public Concert(Long id, String title, LocalDateTime date, Performer performer) {
     	this.id = id;
