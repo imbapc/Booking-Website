@@ -454,15 +454,23 @@ public class ConcertResource {
 
     private int countBookedSeats(LocalDateTime concertDate) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Seat> seats;
 
-        TypedQuery<Seat> seatQuery = em
-                .createQuery(
-                        "SELECT s FROM Seat s " +
-                                "WHERE s.date = :date " +
-                                "AND s.isBooked = true",
-                        Seat.class)
-                .setParameter("date", concertDate);
-        List<Seat> seats = seatQuery.getResultList();
+        try {
+            TypedQuery<Seat> seatQuery = em
+                    .createQuery(
+                            "SELECT s FROM Seat s " +
+                                    "WHERE s.date = :date " +
+                                    "AND s.isBooked = true",
+                            Seat.class)
+                    .setParameter("date", concertDate);
+            seats = seatQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
         return seats.size();
     }
 
