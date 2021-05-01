@@ -6,25 +6,32 @@ import asg.concert.service.mapper.BookingMapper;
 import asg.concert.service.mapper.ConcertMapper;
 import asg.concert.service.mapper.PerformerMapper;
 import asg.concert.service.mapper.SeatMapper;
+import asg.concert.service.util.TheatreLayout;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Path("/concert-service")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConcertResource {
+    private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subs = new Vector<>();
+    private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subsToRemove = new Vector<>();
+    private final Map<Long, Map<LocalDateTime, Integer>> seatsCount = new HashMap<>();
+    ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
-    @Context
-    private UriInfo uriInfo;
 
     @GET
     @Path("/concerts")
@@ -255,7 +262,8 @@ public class ConcertResource {
     @POST
     @Path("/bookings")
     public Response bookConcert(BookingRequestDTO bookingRequestDTO,
-                                @CookieParam("auth") Cookie auth) {
+                                @CookieParam("auth") Cookie auth,
+                                @Context UriInfo uriInfo) {
         if (auth == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
@@ -271,6 +279,10 @@ public class ConcertResource {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
 
+        long concertId = bookingRequestDTO.getConcertId();
+        LocalDateTime concertDate = bookingRequestDTO.getDate();
+        List<String> seatLabels = bookingRequestDTO.getSeatLabels();
+
         EntityManager em = PersistenceManager.instance().createEntityManager();
         EntityTransaction tx = null;
 
@@ -281,18 +293,17 @@ public class ConcertResource {
                                 "WHERE s.date = :date " +
                                 "AND s.label in :seatLabels",
                         Seat.class)
-                .setParameter("date", bookingRequestDTO.getDate())
-                .setParameter("seatLabels", bookingRequestDTO.getSeatLabels());
+                .setParameter("date", concertDate)
+                .setParameter("seatLabels", seatLabels);
         List<Seat> seats = seatQuery.getResultList();
+
+        // Set seats to be booked
         for (Seat seat : seats) {
             seat.setBooked(true);
         }
 
-        // Create booking
-        Booking booking = new Booking(
-                bookingRequestDTO.getConcertId(),
-                bookingRequestDTO.getDate(),
-                auth.getValue(), seats);
+        // Create booking and link to seats
+        Booking booking = new Booking(concertId, concertDate, auth.getValue(), seats);
 
         // Persist booking
         try {
@@ -309,8 +320,11 @@ public class ConcertResource {
             }
         }
 
-        URI u = URI.create(uriInfo.getRequestUri() + "/" + booking.getId());
-        return Response.created(u).build();
+        // Notify subs if there is any
+        processSubscriber(concertId, concertDate);
+
+        URI bookingUri = URI.create(uriInfo.getRequestUri() + "/" + booking.getId());
+        return Response.created(bookingUri).build();
     }
 
     @GET
@@ -359,6 +373,48 @@ public class ConcertResource {
         return Response.ok().entity(result).build();
     }
 
+    @POST
+    @Path("/subscribe/concertInfo")
+    public void subscribeConcertInfo(ConcertInfoSubscriptionDTO concertInfoSubscriptionDTO,
+                                     @CookieParam("auth") Cookie auth,
+                                     @Suspended AsyncResponse sub) {
+        // Check login status
+        if (auth == null) {
+            sub.resume(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
+
+        long concertId = concertInfoSubscriptionDTO.getConcertId();
+        LocalDateTime targetDate = concertInfoSubscriptionDTO.getDate();
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Concert concert;
+        boolean concertExist = true;
+        boolean legalDate = true;
+        try {
+            concert = em.find(Concert.class, concertId);
+            if (concert == null) {
+                // Concert doesn't exist
+                concertExist = false;
+            } else if (!concert.getDates().contains(targetDate)) {
+                // Concert date is illegal
+                legalDate = false;
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
+        if (concertExist && legalDate) {
+            // Subscribe
+            synchronized (subs) {
+                subs.add(Pair.of(sub, concertInfoSubscriptionDTO));
+            }
+        } else {
+            // Resume with BAD_REQUEST status
+            sub.resume(Response.status(Response.Status.BAD_REQUEST).build());
+        }
+    }
+
     private boolean checkConcertExists(BookingRequestDTO bookingRequestDTO) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         List<Concert> concerts;
@@ -394,5 +450,54 @@ public class ConcertResource {
             }
         }
         return bookings.isEmpty();
+    }
+
+    private int countBookedSeats(LocalDateTime concertDate) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+
+        TypedQuery<Seat> seatQuery = em
+                .createQuery(
+                        "SELECT s FROM Seat s " +
+                                "WHERE s.date = :date " +
+                                "AND s.isBooked = true",
+                        Seat.class)
+                .setParameter("date", concertDate);
+        List<Seat> seats = seatQuery.getResultList();
+        return seats.size();
+    }
+
+    private void processSubscriber(long concertId, LocalDateTime concertDate) {
+        threadPool.submit(() -> {
+            if (subs.size() == 0) {
+                return;
+            }
+
+            synchronized (subs) {
+                int seatsBooked = countBookedSeats(concertDate);
+                int totalSeats = TheatreLayout.NUM_SEATS_IN_THEATRE;
+
+                for (Pair<AsyncResponse, ConcertInfoSubscriptionDTO> pair : subs) {
+                    ConcertInfoSubscriptionDTO concertInfoSubscriptionDTO = pair.getRight();
+                    AsyncResponse sub = pair.getLeft();
+
+                    // Concert match
+                    boolean concertMatch = concertInfoSubscriptionDTO.getConcertId() == concertId;
+
+                    // Notification threshold match
+                    double bookedPercentage = (double) seatsBooked * 100 / (double) totalSeats;
+                    int notifyPercentage = concertInfoSubscriptionDTO.getPercentageBooked();
+                    boolean thresholdMatch = bookedPercentage >= notifyPercentage;
+
+                    if (concertMatch && thresholdMatch) {
+                        int seatsRemaining = totalSeats - seatsBooked;
+                        ConcertInfoNotificationDTO concertInfoNotificationDTO = new ConcertInfoNotificationDTO(seatsRemaining);
+                        sub.resume(concertInfoNotificationDTO);
+                        subsToRemove.add(pair);
+                    }
+                }
+                subs.removeAll(subsToRemove);
+                subsToRemove.clear();
+            }
+        });
     }
 }
