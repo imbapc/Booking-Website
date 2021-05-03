@@ -72,7 +72,7 @@ public class Performer implements Comparable<Performer> {
     public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
