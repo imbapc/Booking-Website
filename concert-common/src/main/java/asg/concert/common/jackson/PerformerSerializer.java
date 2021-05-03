@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
-import lab.end2end.concert.domain.Performer;
+import asg.concert.service.domain.Performer;
 
 public class PerformerSerializer extends StdSerializer<Performer>{
 	private static Performer performer;

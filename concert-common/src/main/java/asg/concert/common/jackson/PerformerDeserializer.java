@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.io.IOException;
-import lab.end2end.concert.domain.Performer;
-import lab.end2end.concert.domain.Genre;
+import asg.concert.service.domain.Performer;
+import asg.concert.service.domain.Genre;
 
 public class PerformerDeserializer extends StdDeserializer<Performer> {
 
