@@ -1,51 +1,63 @@
 package asg.concert.service.domain;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.*;
-import concert-common.src.main.java.asg.concert.common.jackson.LocalDateTimeDeserializer;
-import concert-common.src.main.java.asg.concert.common.jackson.LocalDateTimeSerializer;
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 @Entity
-public class Concert implements Comparable<Concert> {
+@Table(name = "CONCERTS")
+public class Concert {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private long id;
+
+    @Column(name = "TITLE")
     private String title;
-    private LocalDateTime date;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade=CascadeType.ALL)
-    protected Performer performer;s
+    @Column(name = "IMAGE_NAME")
+    private String imageName;
 
-    public Concert(Long id, String title, LocalDateTime date, Performer performer) {
-    	this.id = id;
-        this.title = title;
-        this.date = date;
-        this.performer = performer;
-    }
+    @Column(name = "BLURB", length = 1000)
+    private String blurb;
 
-    @JsonCreator
-    public Concert(@JsonProperty("title") String title,
-                   @JsonProperty("date") LocalDateTime date,
-                   @JsonProperty("performer") Performer performer) {
-    	this(null,title, date, performer);
-    }
+    @ElementCollection
+    @CollectionTable(
+            name = "CONCERT_DATES",
+            joinColumns = @JoinColumn(name = "CONCERT_ID")
+    )
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
+    @Column(name = "DATE")
+    private Set<LocalDateTime> dates;
+
+    @ManyToMany(cascade = {CascadeType.PERSIST})
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
+    @JoinTable(name = "CONCERT_PERFORMER",
+            joinColumns = @JoinColumn(name = "CONCERT_ID"),
+            inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
+    private Set<Performer> performers;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    private Set<Booking> bookings;
 
     public Concert() {
     }
 
-    public Long getId() {
-        return id;
+    public Concert(String title, String imageName, String blurb,
+                   Set<LocalDateTime> dates, Set<Performer> performers,
+                   Set<Booking> bookings) {
+        this.title = title;
+        this.imageName = imageName;
+        this.blurb = blurb;
+        this.performers = performers;
+        this.dates = dates;
+        this.bookings = bookings;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public long getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -56,71 +68,43 @@ public class Concert implements Comparable<Concert> {
         this.title = title;
     }
 
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    public LocalDateTime getDate() {
-        return date;
+    public String getImageName() {
+        return imageName;
     }
 
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    public void setDate(LocalDateTime date) {
-        this.date = date;
-    }
-    
-    @JsonSerialize(using = PerformerSerializer.class)
-    public Performer getPerformer() {
-        return performer;
-    }
-    
-    @JsonDeserialize(using = PerformerDeserializer.class)
-    public void setPerformer(Performer performer) {
-    	this.performer = performer;
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
     }
 
-    @Override
-    public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("Concert, id: ");
-        buffer.append(id);
-        buffer.append(", title: ");
-        buffer.append(title);
-        buffer.append(", date: ");
-        buffer.append(date.toString());
-        buffer.append(", featuring: ");
-        buffer.append(performer.getName());
-
-        return buffer.toString();
+    public String getBlurb() {
+        return blurb;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        // Implement value-equality based on a Concert's title alone. ID isn't
-        // included in the equality check because two Concert objects could
-        // represent the same real-world Concert, where one is stored in the
-        // database (and therefore has an ID - a primary key) and the other
-        // doesn't (it exists only in memory).
-        if (!(obj instanceof Concert))
-            return false;
-        if (obj == this)
-            return true;
-
-        Concert rhs = (Concert) obj;
-        return new EqualsBuilder().
-                append(title, rhs.title).
-                isEquals();
+    public void setBlurb(String blurb) {
+        this.blurb = blurb;
     }
 
-    @Override
-    public int hashCode() {
-        // Hash-code value is derived from the value of the title field. It's
-        // good practice for the hash code to be generated based on a value
-        // that doesn't change.
-        return new HashCodeBuilder(17, 31).
-                append(title).hashCode();
+    public Set<LocalDateTime> getDates() {
+        return dates;
     }
 
-    @Override
-    public int compareTo(Concert concert) {
-        return title.compareTo(concert.getTitle());
+    public void setDates(Set<LocalDateTime> dates) {
+        this.dates = dates;
+    }
+
+    public Set<Performer> getPerformers() {
+        return performers;
+    }
+
+    public void setPerformers(Set<Performer> performers) {
+        this.performers = performers;
+    }
+
+    public Set<Booking> getBookings() {
+        return bookings;
+    }
+
+    public void setBookings(Set<Booking> bookings) {
+        this.bookings = bookings;
     }
 }
-
