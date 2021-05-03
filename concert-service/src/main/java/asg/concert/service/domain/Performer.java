@@ -74,23 +74,6 @@ public class Performer implements Comparable<Performer> {
     }
     
     @Override
-    public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("Performer, id: ");
-        buffer.append(id);
-        buffer.append(", name: ");
-        buffer.append(name);
-        buffer.append(", s3 image: ");
-        buffer.append(imageUri);
-        buffer.append(", genre: ");
-        buffer.append(", description: ");
-        buffer.append(blurb);
-        buffer.append(genre.toString());
-
-        return buffer.toString();
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
 
