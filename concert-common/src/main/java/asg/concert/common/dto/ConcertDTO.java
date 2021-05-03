@@ -2,6 +2,8 @@ package asg.concert.common.dto;
 
 import asg.concert.common.jackson.LocalDateTimeDeserializer;
 import asg.concert.common.jackson.LocalDateTimeSerializer;
+import asg.concert.common.jackson.PerformerDeserializer;
+import asg.concert.common.jackson.PerformerSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -85,7 +87,9 @@ public class ConcertDTO {
     public void setDates(List<LocalDateTime> dates) {
         this.dates = dates;
     }
-
+    
+    @JsonDeserialize(contentUsing = PerformerDeserializer.class)
+    @JsonSerialize(contentUsing = PerformerSeriazlier.class)
     public List<PerformerDTO> getPerformers() {
         return performers;
     }
