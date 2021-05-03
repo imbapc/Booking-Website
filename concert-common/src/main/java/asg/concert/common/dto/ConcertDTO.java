@@ -88,8 +88,6 @@ public class ConcertDTO {
         this.dates = dates;
     }
     
-    @JsonDeserialize(contentUsing = PerformerDeserializer.class)
-    @JsonSerialize(contentUsing = PerformerSeriazlier.class)
     public List<PerformerDTO> getPerformers() {
         return performers;
     }
