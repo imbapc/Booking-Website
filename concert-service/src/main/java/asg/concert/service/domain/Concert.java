@@ -47,8 +47,8 @@ public class Concert {
     }
 
     public Concert(String title, String imageName, String blurb,
-                   Set<LocalDateTime> dates, Set<Performer> performers,
-                   Set<Booking> bookings) {
+                   List<LocalDateTime> dates, List<Performer> performers,
+                   List<Booking> bookings) {
         this.title = title;
         this.imageName = imageName;
         this.blurb = blurb;
