@@ -44,7 +44,7 @@ public class Booking {
     	this.concertId = concertId;
     }
     
-    public date getDate() {
+    public LocalDateTime getDate() {
     	return this.date;
     }
     

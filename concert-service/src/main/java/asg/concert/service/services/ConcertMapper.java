@@ -1,6 +1,6 @@
 package asg.concert.service.services;
 
-import asg.concert.domain.Concert;
+import asg.concert.service.domain.Concert;
 
 public class ConcertMapper {
 	
