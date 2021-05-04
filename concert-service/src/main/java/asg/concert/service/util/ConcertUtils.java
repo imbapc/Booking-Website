@@ -12,8 +12,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.List;
+improt java.util.ArrayList;
 
 public class ConcertUtils {
 
@@ -35,9 +36,9 @@ public class ConcertUtils {
             List<Concert> concerts = query.getResultList();
 
             // Get all dates for all concerts
-            Set<LocalDateTime> allDates = new HashSet<>();
+            List<LocalDateTime> allDates = new ArrayList<>();
             for (Concert c : concerts) {
-                Set<LocalDateTime> dates = c.getDates();
+                List<LocalDateTime> dates = c.getDates();
                 allDates.addAll(dates);
             }
             em.getTransaction().commit();
