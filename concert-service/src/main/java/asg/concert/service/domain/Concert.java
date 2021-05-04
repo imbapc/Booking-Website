@@ -31,7 +31,7 @@ public class Concert {
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
     @Column(name = "DATE")
-    private Set<LocalDateTime> dates;
+    private List<LocalDateTime> dates;
 
     @ManyToMany(cascade = {CascadeType.PERSIST})
     @org.hibernate.annotations.Fetch(
@@ -48,7 +48,7 @@ public class Concert {
     }
 
     public Concert(String title, String imageName, String blurb,
-                   Set<LocalDateTime> dates, List<Performer> performers,
+                   List<LocalDateTime> dates, List<Performer> performers,
                    List<Booking> bookings) {
         this.title = title;
         this.imageName = imageName;
@@ -90,11 +90,11 @@ public class Concert {
         this.blurb = blurb;
     }
 
-    public Set<LocalDateTime> getDates() {
+    public List<LocalDateTime> getDates() {
         return dates;
     }
 
-    public void setDates(Set<LocalDateTime> dates) {
+    public void setDates(List<LocalDateTime> dates) {
         this.dates = dates;
     }
 
