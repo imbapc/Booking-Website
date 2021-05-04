@@ -81,7 +81,7 @@ public class ConcertDTO {
     @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
     @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
     public Set<LocalDateTime> getDates() {
-        return dates;
+        return this.dates;
     }
 
     public void setDates(Set<LocalDateTime> dates) {
