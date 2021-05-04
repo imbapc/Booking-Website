@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * DTO class to represent concerts.
@@ -26,7 +27,7 @@ public class ConcertDTO {
     private String title;
     private String imageName;
     private String blurb;
-    private List<LocalDateTime> dates = new ArrayList<>();
+    private Set<LocalDateTime> dates = new ArrayList<>();
     private List<PerformerDTO> performers = new ArrayList<>();
 
     public ConcertDTO() {
@@ -78,11 +79,11 @@ public class ConcertDTO {
 
     @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
     @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
-    public List<LocalDateTime> getDates() {
+    public Set<LocalDateTime> getDates() {
         return dates;
     }
 
-    public void setDates(List<LocalDateTime> dates) {
+    public void setDates(Set<LocalDateTime> dates) {
         this.dates = dates;
     }
     

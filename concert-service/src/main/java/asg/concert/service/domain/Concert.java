@@ -3,6 +3,7 @@ package asg.concert.service.domain;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.ArrayList;
 
 @Entity
@@ -30,7 +31,7 @@ public class Concert {
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
     @Column(name = "DATE")
-    private List<LocalDateTime> dates;
+    private Set<LocalDateTime> dates;
 
     @ManyToMany(cascade = {CascadeType.PERSIST})
     @org.hibernate.annotations.Fetch(
@@ -85,11 +86,11 @@ public class Concert {
         this.blurb = blurb;
     }
 
-    public List<LocalDateTime> getDates() {
+    public Set<LocalDateTime> getDates() {
         return dates;
     }
 
-    public void setDates(List<LocalDateTime> dates) {
+    public void setDates(Set<LocalDateTime> dates) {
         this.dates = dates;
     }
 

@@ -2,6 +2,8 @@ package asg.concert.service.services;
 
 import asg.concert.service.domain.Concert;
 import asg.concert.common.dto.ConcertDTO;
+import asg.concert.service.domain.Performer;
+import asg.concert.common.dto.PerformerDTO;
 import asg.concert.service.services.PerformerMapper;
 
 import java.util.List;
@@ -12,7 +14,6 @@ public class ConcertMapper {
 	static Concert toDomainModel(ConcertDTO concertDTO) {
 		List<PerformerDTO> performerDTOs = concertDTO.getPerformers();
 		List<Performer> performers = new ArrayList<>();
-		
 		for (PerformerDTO performerDTO: performerDTOs) {
 			performers.add(PerformerMapper.toDomainModel(performerDTO));
 		}
@@ -29,10 +30,14 @@ public class ConcertMapper {
 	static ConcertDTO toDTO(Concert concert){
 		List<PerformerDTO> performerDTOs = new ArrayList<>();
 		List<Performer> performers = concert.getPerformers;
-		concertDTO.setDates(concert.getDates);
 		for (Performer performer: performers) {
 			performerDTOs.add(PerformerMapper.toDTO(performer));
 		}
+		ConcertDTO concertDTO = new ConcertDTO(concert.getId(),
+				concert.getTitle(),
+				concert.getImageName(),
+				concert.getBlurb());
+		concertDTO.setDates(concert.getDates);
 		concertDTO.setPerformers(performerDTOs);
 		return concertDTO;
 	}
