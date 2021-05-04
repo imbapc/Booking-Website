@@ -18,8 +18,7 @@ public class ConcertMapper(){
 		asg.concert.common.dto.ConcertDTO concertDTO = new asg.concert.common.dto.ConcertDTO(concert.getId(),
 				concert.getTitle(),
 				concert.getImageName(),
-				concert.getBlurb(),
-				);
+				concert.getBlurb());
 		concertDTO.setDates(concert.getDates);
 		concertDTO.setPerformers(concert.getPerformers);
 		return concertDTO;
