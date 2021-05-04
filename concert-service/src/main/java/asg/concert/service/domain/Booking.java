@@ -52,6 +52,7 @@ public class Booking {
     	this.date = date;
     }
     
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     public List<Seat> getSeats(){
     	return this.seats;
     }
