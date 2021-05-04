@@ -2,7 +2,7 @@ package asg.concert.service.services;
 
 import asg.concert.domain.Concert;
 
-public class ConcertMapper() {
+public class ConcertMapper(){
 	
 	static Concert toDomainModel(asg.concert.common.dto.ConcertDTO concertDTO) {
 		Concert concert = new Concert(concertDTO.getTitle(),
