@@ -27,7 +27,7 @@ public class ConcertDTO {
     private String title;
     private String imageName;
     private String blurb;
-    private Set<LocalDateTime> dates = new ArrayList<>();
+    private Set<LocalDateTime> dates = new HashSet<>();
     private List<PerformerDTO> performers = new ArrayList<>();
 
     public ConcertDTO() {
