@@ -52,7 +52,7 @@ public class Booking {
     	this.date = date;
     }
     
-    @OneToMany(TargetEntity = Seat.class, mappedBy = "BOOKINGS", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToMany(targetEntity = Seat.class, mappedBy = "BOOKINGS", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     public List<Seat> getSeats(){
     	return this.seats;
     }
