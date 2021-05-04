@@ -23,13 +23,13 @@ public class ConcertMapper {
 				concertDTO.getBlurb(),
 				concertDTO.getDates(),
 				performers,null);
-		concert.setId(concertDTO.getId);
+		concert.setId(concertDTO.getId());
 		return concert;
 	}
 	
 	static ConcertDTO toDTO(Concert concert){
 		List<PerformerDTO> performerDTOs = new ArrayList<>();
-		List<Performer> performers = concert.getPerformers;
+		List<Performer> performers = concert.getPerformers();
 		for (Performer performer: performers) {
 			performerDTOs.add(PerformerMapper.toDTO(performer));
 		}
@@ -37,7 +37,7 @@ public class ConcertMapper {
 				concert.getTitle(),
 				concert.getImageName(),
 				concert.getBlurb());
-		concertDTO.setDates(concert.getDates);
+		concertDTO.setDates(concert.getDates());
 		concertDTO.setPerformers(performerDTOs);
 		return concertDTO;
 	}
