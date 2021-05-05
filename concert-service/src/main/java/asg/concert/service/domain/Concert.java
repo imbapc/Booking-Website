@@ -41,7 +41,7 @@ public class Concert {
             inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
     private List<Performer> performers;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "CONCERTS", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private List<Booking> bookings;
 
     public Concert() {
