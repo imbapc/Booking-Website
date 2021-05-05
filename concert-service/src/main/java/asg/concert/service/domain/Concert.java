@@ -34,6 +34,8 @@ public class Concert {
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
     @Column(name = "DATE")
+    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
+    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
     private List<LocalDateTime> dates;
 
     @org.hibernate.annotations.Fetch(
@@ -92,8 +94,7 @@ public class Concert {
     public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
-    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
-    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
+    
     public List<LocalDateTime> getDates() {
         return dates;
     }
