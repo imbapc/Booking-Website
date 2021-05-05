@@ -28,6 +28,7 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
 
         Concert concert;
+        ConcertDTO concertDTO;
         try {
             em.getTransaction().begin();
 
@@ -50,6 +51,7 @@ public class ConcertResource {
     	LOGGER.info("Retrieveing Concert Summary with id" + id);
     	EntityManager em = PersistenceManager.instance().createEntityManager();
     	Concert concert;
+    	ConcertSummaryDTO concertSummaryDTO;
     	try {
     		em.getTransaction().begin();
     		
@@ -57,7 +59,7 @@ public class ConcertResource {
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
-    		ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
+    		concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		em.getTransaction().commit();
     	}finally {
     		em.close();
