@@ -22,7 +22,7 @@ public class ConcertResource {
     private final static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
 
     @GET
-    @Path("{id}")
+    @Path("/{id}")
     public Response retrieveConcert(@PathParam("id") Long id) {
         LOGGER.info("Retrieving Concert with id " + id);
         EntityManager em = PersistenceManager.instance().createEntityManager();
@@ -55,7 +55,6 @@ public class ConcertResource {
     		em.getTransaction().begin();
     		
     		concert = em.find(Concert.class, id);
-    		LOGGER.info("Concert is" + concert);
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
