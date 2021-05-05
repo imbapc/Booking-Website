@@ -1,5 +1,7 @@
 package asg.concert.service.domain;
 
+import asg.concert.common.jackson.*;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -89,7 +91,9 @@ public class Concert {
     public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
-
+    
+    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
+    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
     public List<LocalDateTime> getDates() {
         return dates;
     }
