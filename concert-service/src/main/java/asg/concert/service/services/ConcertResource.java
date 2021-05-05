@@ -73,7 +73,7 @@ public class ConcertResource {
     }
 
     @GET
-    @Path("Performers/{id}")
+    @Path("performers/{id}")
     public Response retrievePerformer(@PathParam("id") Long id){
         LOGGER.info("Retrieving Performer with id" + id);
         EntityManager em = PersistenceManager.instance().createEntityManager();
