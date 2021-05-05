@@ -33,9 +33,9 @@ public class Concert {
     @Column(name = "DATE")
     private List<LocalDateTime> dates;
 
-    @ManyToMany(mappedBy = "CONCERTS", fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST})
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST})
     @JoinTable(name = "CONCERT_PERFORMER",
             joinColumns = @JoinColumn(name = "CONCERT_ID"),
             inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
