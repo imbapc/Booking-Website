@@ -15,7 +15,7 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 
-@Path("/concert-service/concerts")
+@Path("/concert-service")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConcertResource {
@@ -23,7 +23,7 @@ public class ConcertResource {
     private final static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
 
     @GET
-    @Path("{id}")
+    @Path("concerts/{id}")
     public Response retrieveConcert(@PathParam("id") Long id) {
         LOGGER.info("Retrieving Concert with id " + id);
         EntityManager em = PersistenceManager.instance().createEntityManager();
@@ -50,9 +50,9 @@ public class ConcertResource {
     }
     
     @GET
-    @Path("summaries/{id}")
+    @Path("concerts/summaries/{id}")
     public Response retrieveConcertSummaries(@PathParam("id") Long id) {
-    	LOGGER.info("Retrieveing Concert Summary with id" + id);
+    	LOGGER.info("Retrieving Concert Summary with id" + id);
     	EntityManager em = PersistenceManager.instance().createEntityManager();
     	Concert concert;
     	ConcertSummaryDTO concertSummaryDTO;
@@ -60,16 +60,39 @@ public class ConcertResource {
     		em.getTransaction().begin();
     		
     		concert = em.find(Concert.class, id);
+            concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
-    		concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		em.getTransaction().commit();
-    	}finally {
+    	}finally{
     		em.close();
     	}
     	
     	return Response.ok().entity(concertSummaryDTO).build();
+    }
+
+    @GET
+    @Path("Performers/{id}")
+    public Response retrievePerformer(@PathParam("id") Long id){
+        LOGGER.info("Retrieving Performer with id" + id);
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Performer performer;
+        PerformerDTO performerDTO;
+        try{
+            em.getTransaction().begin();
+
+            performer = em.find(Performer.class, id);
+            performerDTO = PerformerMapper.toDTO(performer);
+            if (performer == null){
+                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            }
+            em.getTransaction().commit();
+        }
+        finally {
+            em.close();
+        }
+        return Response.ok().entity(performerDTO).build();
     }
 }
 
