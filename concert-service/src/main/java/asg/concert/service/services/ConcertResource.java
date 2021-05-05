@@ -2,6 +2,7 @@ package asg.concert.service.services;
 
 import asg.concert.service.domain.*;
 import asg.concert.common.dto.*;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,7 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             concert = em.find(Concert.class, id);
+            Hibernate.initialize(concert);
             if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
