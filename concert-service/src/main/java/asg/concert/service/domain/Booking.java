@@ -49,11 +49,11 @@ public class Booking {
 		this.id = id;
 	}
 
-	public User getUser() {
+	public User getBookingUser() {
 		return user;
 	}
 
-	public void setUser(User user) {
+	public void setBookingUser(User user) {
 		this.user = user;
 	}
 
