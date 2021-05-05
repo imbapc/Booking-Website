@@ -55,7 +55,7 @@ public class ConcertResource {
     		em.getTransaction().begin();
     		
     		concert = em.find(Concert.class, id);
-    		System.out.println(concert);
+    		System.out.println("Concert is" + concert);
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
