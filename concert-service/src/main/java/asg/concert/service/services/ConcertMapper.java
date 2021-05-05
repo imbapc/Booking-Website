@@ -46,6 +46,6 @@ public class ConcertMapper {
 	
 	static ConcertSummaryDTO toSummaryDTO(Concert concert) {
 		ConcertSummaryDTO concertSummaryDTO = new ConcertSummaryDTO(concert.getId(),concert.getTitle(),concert.getImageName());
-		return ConcertSummaryDTO;
+		return concertSummaryDTO;
 	}
 }
