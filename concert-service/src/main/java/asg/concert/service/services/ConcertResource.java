@@ -35,7 +35,7 @@ public class ConcertResource {
             if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
-            concertDTO = ConcertMapper.toDTO(concert);
+            ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
             em.getTransaction().commit();
         } finally {
             em.close();
@@ -57,7 +57,7 @@ public class ConcertResource {
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
-    		concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
+    		ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		em.getTransaction().commit();
     	}finally {
     		em.close();
