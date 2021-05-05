@@ -4,6 +4,7 @@ import asg.concert.service.domain.Concert;
 import asg.concert.common.dto.ConcertDTO;
 import asg.concert.service.domain.Performer;
 import asg.concert.common.dto.PerformerDTO;
+
 import asg.concert.service.services.PerformerMapper;
 
 import java.util.List;
@@ -40,5 +41,10 @@ public class ConcertMapper {
 		concertDTO.setDates(concert.getDates());
 		concertDTO.setPerformers(performerDTOs);
 		return concertDTO;
+	}
+	
+	static ConcertSummaryDTO toSummaryDTO(Concert concert) {
+		ConcertSummaryDTO concertSummaryDTO = new ConcertSummaryDTO(concert.getId(),concert.getTitle(),concert.getImageName());
+		return ConcertSummaryDTO;
 	}
 }
