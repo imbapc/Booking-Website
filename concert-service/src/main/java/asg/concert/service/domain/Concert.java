@@ -1,6 +1,7 @@
 package asg.concert.service.domain;
 
-import asg.concert.common.jackson.*;
+import asg.concert.common.jackson.LocalDateTimeDeserializer;
+import asg.concert.common.jackson.LocalDateTimeSerializer;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
