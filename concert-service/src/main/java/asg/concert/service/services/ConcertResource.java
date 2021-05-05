@@ -39,7 +39,9 @@ public class ConcertResource {
             concertDTO = ConcertMapper.toDTO(concert);
             em.getTransaction().commit();
         } finally {
-            em.close();
+            if(em!= null && em.isOpen()) {
+                em.close();
+            }
         }
 
         return Response.ok().entity(concertDTO).build();
