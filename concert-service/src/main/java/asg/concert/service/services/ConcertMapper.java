@@ -4,6 +4,7 @@ import asg.concert.service.domain.Concert;
 import asg.concert.common.dto.ConcertDTO;
 import asg.concert.service.domain.Performer;
 import asg.concert.common.dto.PerformerDTO;
+import asg.concert.common.dto.ConcertSummaryDTO;
 
 import asg.concert.service.services.PerformerMapper;
 

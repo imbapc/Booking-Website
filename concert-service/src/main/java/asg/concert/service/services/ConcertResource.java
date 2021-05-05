@@ -2,8 +2,6 @@ package asg.concert.service.services;
 
 import asg.concert.service.domain.*;
 import asg.concert.common.dto.*;
-import asg.concert.service.services;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +64,7 @@ public class ConcertResource {
     	}
     	
     	ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
-    	return Reponse.ok().entity(concertSummaryDTO).build();
+    	return Response.ok().entity(concertSummaryDTO).build();
     }
 }
 
