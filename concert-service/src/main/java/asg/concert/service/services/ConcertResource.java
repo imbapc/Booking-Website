@@ -32,7 +32,6 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             concert = em.find(Concert.class, id);
-            Hibernate.initialize(concert.getPerformers());
             if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
