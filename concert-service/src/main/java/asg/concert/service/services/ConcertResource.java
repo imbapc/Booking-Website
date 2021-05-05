@@ -3,6 +3,7 @@ package asg.concert.service.services;
 import asg.concert.service.domain.*;
 import asg.concert.common.dto.*;
 import org.hibernate.Hibernate;
+import org.hibernate.criterion.NotNullExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +89,9 @@ public class ConcertResource {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
             em.getTransaction().commit();
+        }
+        catch(NullPointerException e){
+            return Response.status(404).build();
         }
         finally {
             em.close();
