@@ -33,7 +33,7 @@ public class Concert {
     @Column(name = "DATE")
     private List<LocalDateTime> dates;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST})
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
     @JoinTable(name = "CONCERT_PERFORMER",
