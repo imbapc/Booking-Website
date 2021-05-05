@@ -46,7 +46,7 @@ public class ConcertResource {
     }
     
     @GET
-    @Path("/summaries/{id}")
+    @Path("summaries/{id}")
     public Response retrieveConcertSummaries(@PathParam("id") Long id) {
     	LOGGER.info("Retrieveing Concert Summary with id" + id);
     	EntityManager em = PersistenceManager.instance().createEntityManager();
