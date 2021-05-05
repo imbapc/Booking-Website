@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 
-@Path("/concerts")
+@Path("/concert-service/concerts")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConcertResource {
@@ -22,7 +22,7 @@ public class ConcertResource {
     private final static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
 
     @GET
-    @Path("/{id}")
+    @Path("{id}")
     public Response retrieveConcert(@PathParam("id") Long id) {
         LOGGER.info("Retrieving Concert with id " + id);
         EntityManager em = PersistenceManager.instance().createEntityManager();
