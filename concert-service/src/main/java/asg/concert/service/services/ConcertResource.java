@@ -35,13 +35,12 @@ public class ConcertResource {
             if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
-
+            ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
             em.getTransaction().commit();
         } finally {
             em.close();
         }
 
-        ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
         return Response.ok().entity(concertDTO).build();
     }
     
@@ -58,12 +57,12 @@ public class ConcertResource {
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
+    		ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		em.getTransaction().commit();
     	}finally {
     		em.close();
     	}
     	
-    	ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     	return Response.ok().entity(concertSummaryDTO).build();
     }
 }
