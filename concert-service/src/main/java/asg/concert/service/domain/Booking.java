@@ -15,7 +15,7 @@ public class Booking {
     
     private long concertId;
     private LocalDateTime date;
-    @OneToMany(targetEntity = Seat.class, mappedBy = "BOOKINGS", fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     private List<Seat> seats = new ArrayList<>();
     
 
