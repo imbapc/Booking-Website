@@ -57,20 +57,24 @@ public class ConcertResource {
     }
     
     @GET
-    @Path("concerts/summaries/{id}")
-    public Response retrieveConcertSummaries(@PathParam("id") Long id) {
-    	LOGGER.info("Retrieving Concert Summary with id" + id);
+    @Path("concerts/summaries")
+    public Response retrieveConcertSummaries() {
+    	LOGGER.info("Retrieving All Concert Summaries");
     	EntityManager em = PersistenceManager.instance().createEntityManager();
-    	Concert concert;
-    	ConcertSummaryDTO concertSummaryDTO;
+    	Query query = em.createQuery("select concert from Concert concert");
+    	List<Concert> concertList;
+    	List<ConcertSummaryDTO> concertSummaryDTOList = new ArrayList<>();
     	try {
     		em.getTransaction().begin();
-    		
-    		concert = em.find(Concert.class, id);
-    		if (concert == null) {
+
+            concertList = (List<Concert>)query.getResultList();
+    		if (concertList == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
-            concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
+            for (Concert concert: concertList){
+                ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
+                concertSummaryDTOList.add(concertSummaryDTO);
+            }
     		em.getTransaction().commit();
     	}
         catch(NullPointerException e){
@@ -80,7 +84,7 @@ public class ConcertResource {
     		em.close();
     	}
     	
-    	return Response.ok().entity(concertSummaryDTO).build();
+    	return Response.ok().entity(concertSummaryDTOList).build();
     }
 
     @GET
