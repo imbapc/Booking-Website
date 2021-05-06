@@ -193,7 +193,7 @@ public class ConcertResource {
 
             userInDB = (User) query.getSingleResult();
             String passwordToCheck = userInDB.getPassword();
-            if(passwordToCheck.equals(userPassword)){
+            if(passwordToCheck.equals(userPassword) == false){
                 LOGGER.info("user's password is " + userPassword + " but the correct one is " + passwordToCheck);
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
