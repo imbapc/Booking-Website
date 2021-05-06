@@ -2,16 +2,17 @@ package asg.concert.service.services;
 
 import asg.concert.common.dto.*;
 import asg.concert.service.domain.*;
-import asg.concert.service.mapper.BookingMapper;
-import asg.concert.service.mapper.ConcertMapper;
-import asg.concert.service.mapper.PerformerMapper;
-import asg.concert.service.mapper.SeatMapper;
+import asg.concert.service.services.BookingMapper;
+import asg.concert.service.services.ConcertMapper;
+import asg.concert.service.serives.PerformerMapper;
+import asg.concert.service.services.SeatMapper;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
+import javax.persistence.NoResultException;
 import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -22,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 @Path("/concerts")
 @Produces(MediaType.APPLICATION_JSON)
@@ -157,6 +159,12 @@ public class ConcertResource {
 		} finally {
 			em.close();
 		}
+	}
+	private NewCookie newSession(User user, EntityManager em) {
+		em.getTransaction().begin();
+		em.lock(user, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+		em.getTransaction().commit();
+		return new NewCookie(AUTH_COOKIE, user.getSessionId().toString());
 	}
 }
 
