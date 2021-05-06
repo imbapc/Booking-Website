@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
@@ -190,12 +191,12 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             userInDB = (User) query.getSingleResult();
-            if (userInDB == null){
+            if(userInDB != user){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
-            else if(userInDB != user){
-                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
-            }
+        }
+        catch (NoResultException e){
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
         finally{
             em.close();
