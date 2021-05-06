@@ -123,5 +123,29 @@ public class ConcertResource {
 
         return Response.noContent().build();
     }
+    
+	@POST
+	@Path("/login")
+	public Response login(UserDTO attempt) {
+		EntityManager em = createEM();
+		try {
+			em.getTransaction().begin();
+			User user;
+			try {
+				user = em.createQuery("SELECT u FROM User u where u.username = :username AND u.password = :password", User.class)
+						.setParameter("username", attempt.getUsername())
+						.setParameter("password", attempt.getPassword())
+						.getSingleResult();
+			} catch (NoResultException e) { // No username-password match
+				return Response.status(Status.UNAUTHORIZED).build();
+			} finally {
+				em.getTransaction().commit();
+			}
+
+			return Response.ok().cookie(newSession(user, em)).build();
+		} finally {
+			em.close();
+		}
+	}
 }
 
