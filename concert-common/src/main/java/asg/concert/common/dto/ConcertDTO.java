@@ -5,6 +5,8 @@ import asg.concert.common.jackson.LocalDateTimeSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import javax.persistence.ElementCollection;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,13 +22,25 @@ import java.util.List;
  * performers   the performers in the concert
  * blurb        the concert's description
  */
+@Entity
 public class ConcertDTO {
 
+    @Id
     private Long id;
     private String title;
     private String imageName;
     private String blurb;
+
+    @ElementCollection
+    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
+    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<LocalDateTime> dates = new ArrayList<>();
+
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST})
     private List<PerformerDTO> performers = new ArrayList<>();
 
     public ConcertDTO() {
@@ -76,8 +90,6 @@ public class ConcertDTO {
         this.blurb = blurb;
     }
 
-    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
-    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
     public List<LocalDateTime> getDates() {
         return dates;
     }
