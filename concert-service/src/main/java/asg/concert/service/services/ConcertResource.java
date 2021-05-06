@@ -204,7 +204,8 @@ public class ConcertResource {
         finally{
             em.close();
         }
-        return Response.ok().entity(userInDB).build();
+        Cookie cookie = new Cookie("auth", user.getUsername());
+        return Response.ok().entity(cookie).build();
     }
 
 }
