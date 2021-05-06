@@ -177,6 +177,7 @@ public class ConcertResource {
         return Response.ok().entity(performerDTOList).build();
     }
 
+    @POST
     @Path("login")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response login(UserDTO userDTO){
