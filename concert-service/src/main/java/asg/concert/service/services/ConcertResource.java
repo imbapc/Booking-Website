@@ -191,7 +191,7 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             userInDB = (User) query.getSingleResult();
-            if(userInDB != user){
+            if(userInDB.getPassword() != user.getPassword()){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
         }
@@ -201,7 +201,7 @@ public class ConcertResource {
         finally{
             em.close();
         }
-        return Response.seeOther(URI.create("/")).entity(userInDB).build();
+        return Response.ok().entity(userInDB).build();
     }
 
 }
