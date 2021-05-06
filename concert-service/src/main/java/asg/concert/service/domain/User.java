@@ -20,6 +20,7 @@ public class User {
     @Column(name = "PASSWORD")
     private String password;
 
+    @Version
     @Column(name = "VERSION")
     private int version;
 

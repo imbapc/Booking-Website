@@ -40,10 +40,6 @@ public class Performer implements Comparable<Performer> {
     public long getId() {
         return id;
     }
-    
-    public void setId(long id) {
-    	this.id = id;
-    }
 
     public String getName() {
         return name;
@@ -76,7 +72,7 @@ public class Performer implements Comparable<Performer> {
     public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

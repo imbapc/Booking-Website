@@ -1,15 +1,8 @@
 package asg.concert.service.domain;
 
-import asg.concert.common.jackson.LocalDateTimeDeserializer;
-import asg.concert.common.jackson.LocalDateTimeSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
-import java.util.ArrayList;
 
 @Entity
 @Table(name = "CONCERTS")
@@ -29,8 +22,6 @@ public class Concert {
     private String blurb;
 
     @ElementCollection
-    @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
-    @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
     @CollectionTable(
             name = "CONCERT_DATES",
             joinColumns = @JoinColumn(name = "CONCERT_ID")
@@ -38,25 +29,25 @@ public class Concert {
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
     @Column(name = "DATE")
-    private List<LocalDateTime> dates;
+    private Set<LocalDateTime> dates;
 
+    @ManyToMany(cascade = {CascadeType.PERSIST})
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST})
     @JoinTable(name = "CONCERT_PERFORMER",
             joinColumns = @JoinColumn(name = "CONCERT_ID"),
             inverseJoinColumns = @JoinColumn(name = "PERFORMER_ID"))
-    private List<Performer> performers;
+    private Set<Performer> performers;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    private List<Booking> bookings;
+    private Set<Booking> bookings;
 
     public Concert() {
     }
 
     public Concert(String title, String imageName, String blurb,
-                   List<LocalDateTime> dates, List<Performer> performers,
-                   List<Booking> bookings) {
+                   Set<LocalDateTime> dates, Set<Performer> performers,
+                   Set<Booking> bookings) {
         this.title = title;
         this.imageName = imageName;
         this.blurb = blurb;
@@ -67,10 +58,6 @@ public class Concert {
 
     public long getId() {
         return id;
-    }
-    
-    public void setId(long id) {
-    	this.id = id;
     }
 
     public String getTitle() {
@@ -96,28 +83,28 @@ public class Concert {
     public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
-    
-    public List<LocalDateTime> getDates() {
+
+    public Set<LocalDateTime> getDates() {
         return dates;
     }
 
-    public void setDates(List<LocalDateTime> dates) {
+    public void setDates(Set<LocalDateTime> dates) {
         this.dates = dates;
     }
 
-    public List<Performer> getPerformers() {
+    public Set<Performer> getPerformers() {
         return performers;
     }
 
-    public void setPerformers(List<Performer> performers) {
+    public void setPerformers(Set<Performer> performers) {
         this.performers = performers;
     }
 
-    public List<Booking> getBookings() {
+    public Set<Booking> getBookings() {
         return bookings;
     }
 
-    public void setBookings(List<Booking> bookings) {
+    public void setBookings(Set<Booking> bookings) {
         this.bookings = bookings;
     }
 }
