@@ -2,10 +2,10 @@ package asg.concert.service.services;
 
 import asg.concert.common.dto.*;
 import asg.concert.service.domain.*;
-import asg.concert.service.services.BookingMapper;
-import asg.concert.service.services.ConcertMapper;
-import asg.concert.service.services.PerformerMapper;
-import asg.concert.service.services.SeatMapper;
+import asg.concert.service.Mapper.BookingMapper;
+import asg.concert.service.Mapper.ConcertMapper;
+import asg.concert.service.Mapper.PerformerMapper;
+import asg.concert.service.Mapper.SeatMapper;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
 
