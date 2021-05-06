@@ -55,7 +55,39 @@ public class ConcertResource {
 
         return Response.ok().entity(concertDTO).build();
     }
-    
+
+    @GET
+    @Path("concerts")
+    public Response retrieveAllConcerts(){
+        LOGGER.info("Retrieve ALl concerts");
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Query query = em.createQuery("select concert from Concert concert");
+
+        List<Concert> concertList;
+        List<ConcertDTO> concertDTOList = new ArrayList<>();
+
+        try{
+            em.getTransaction().begin();
+
+            concertList = (List<Concert>) query.getResultList();
+            if (concertList == null){
+                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            }
+            for (Concert concert: concertList){
+                ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
+                concertDTOList.add(concertDTO);
+            }
+        }
+        catch(NullPointerException e){
+            return Response.status(404).build();
+        }
+        finally {
+            em.close();
+        }
+
+        return Response.ok().entity(concertDTOList).build();
+    }
+
     @GET
     @Path("concerts/summaries")
     public Response retrieveConcertSummaries() {
@@ -115,7 +147,7 @@ public class ConcertResource {
 
     @GET
     @Path("performers")
-    public Response retrieveAllPerformer(){
+    public Response retrieveAllPerformers(){
         LOGGER.info("Retrieving all performers");
         EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query = em.createQuery("select performer from Performer performer");
@@ -129,8 +161,8 @@ public class ConcertResource {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
 
-            for (int i = 0; i < performerList.size(); i++){
-                PerformerDTO performerDTO = PerformerMapper.toDTO(performerList.get(i));
+            for (Performer performer: performerList){
+                PerformerDTO performerDTO = PerformerMapper.toDTO(performer);
                 performerDTOList.add(performerDTO);
             }
             em.getTransaction().commit();
