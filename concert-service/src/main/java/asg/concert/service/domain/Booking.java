@@ -21,6 +21,7 @@ public class Booking {
 
     public Booking() {
     }
+<<<<<<< HEAD
     
     public Booking(long id, long concertId, LocalDateTime date, List<Seat> seats) {
     	this.id = id;
@@ -61,3 +62,6 @@ public class Booking {
     	this.seats = seats;
     }
 }
+=======
+}
+>>>>>>> refs/remotes/origin/master
