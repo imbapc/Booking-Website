@@ -37,7 +37,7 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             concert = em.find(Concert.class, id);
-            Hibernate.initialize(concert);
+            Hibernate.initialize(concert.getDates());
             if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
@@ -139,5 +139,7 @@ public class ConcertResource {
         }
         return Response.ok().entity(performerDTOList).build();
     }
+
+
 }
 
