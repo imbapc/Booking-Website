@@ -4,7 +4,7 @@ import asg.concert.common.dto.*;
 import asg.concert.service.domain.*;
 import asg.concert.service.services.BookingMapper;
 import asg.concert.service.services.ConcertMapper;
-import asg.concert.service.serives.PerformerMapper;
+import asg.concert.service.services.PerformerMapper;
 import asg.concert.service.services.SeatMapper;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
@@ -155,16 +155,9 @@ public class ConcertResource {
 				em.getTransaction().commit();
 			}
 
-			return Response.ok().cookie(newSession(user, em)).build();
+	        NewCookie cookie = new NewCookie("auth", userDTO.getUsername());
+	        return Response.ok().cookie(cookie).build();
 		} finally {
 			em.close();
 		}
 	}
-	private NewCookie newSession(User user, EntityManager em) {
-		em.getTransaction().begin();
-		em.lock(user, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-		em.getTransaction().commit();
-		return new NewCookie(AUTH_COOKIE, user.getSessionId().toString());
-	}
-}
-
