@@ -208,5 +208,16 @@ public class ConcertResource {
         builder.cookie(new NewCookie("auth", user.toString()));
         return builder.status(200).build();
     }
+    
+    @POST
+    @Path("bookings")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response booking(BookingRequestDTO bookingRequestDTO @CookieParam("auth") String username) {
+    	if (username == null) {
+    		return Response.seeOther().build();
+    	}
+    	
+    	return Response.ok()
+    }
 }
 

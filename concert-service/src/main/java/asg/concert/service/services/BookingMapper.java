@@ -19,5 +19,10 @@ public class BookingMapper {
         }
         return new BookingDTO(booking.getConcertId(), booking.getDate(), seatDTOList);
     }
+    
+    static Booking toDomainModel(BookingRequestDTO bookingRequestDTO) {
+    	List<Seat> SeatList = new ArrayList<>();
+    	
+    }
 
 }
