@@ -182,17 +182,19 @@ public class ConcertResource {
     @Path("login")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response login(UserDTO userDTO){
-        LOGGER.info("user " + userDTO.getUsername() + "tries to login with password" + userDTO.getPassword());
+        LOGGER.info("user " + userDTO.getUsername() + " tries to login with password " + userDTO.getPassword());
         EntityManager em = PersistenceManager.instance().createEntityManager();
         User user = UserMapper.toDomainModel(userDTO);
+        String userPassword = user.getPassword();
         Query query = em.createQuery("select user from User user where user.username = :username").setParameter("username", user.getUsername());
         User userInDB;
         try{
             em.getTransaction().begin();
 
             userInDB = (User) query.getSingleResult();
-            if(userInDB.getPassword() != user.getPassword()){
-                LOGGER.info("user's password is" + userInDB.getPassword() + "but the correct one is " + user.getPassword());
+            String passwordToCheck = userInDB.getPassword();
+            if(passwordToCheck != userPassword){
+                LOGGER.info("user's password is " + userPassword + " but the correct one is " + passwordToCheck);
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
         }
