@@ -126,15 +126,15 @@ public class ConcertResource {
     
 	@POST
 	@Path("/login")
-	public Response login(UserDTO attempt) {
+	public Response login(UserDTO userDTO) {
 		EntityManager em = createEM();
 		try {
 			em.getTransaction().begin();
 			User user;
 			try {
 				user = em.createQuery("SELECT u FROM User u where u.username = :username AND u.password = :password", User.class)
-						.setParameter("username", attempt.getUsername())
-						.setParameter("password", attempt.getPassword())
+						.setParameter("username", userDTO.getUsername())
+						.setParameter("password", userDTO.getPassword())
 						.getSingleResult();
 			} catch (NoResultException e) { // No username-password match
 				return Response.status(Status.UNAUTHORIZED).build();
