@@ -12,23 +12,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class ConcertMapper {
-	
-	static Concert toDomainModel(ConcertDTO concertDTO) {
-		List<PerformerDTO> performerDTOs = concertDTO.getPerformers();
-		List<Performer> performers = new ArrayList<>();
-		for (PerformerDTO performerDTO: performerDTOs) {
-			performers.add(PerformerMapper.toDomainModel(performerDTO));
-		}
-		
-		Concert concert = new Concert(concertDTO.getTitle(),
-				concertDTO.getImageName(),
-				concertDTO.getBlurb(),
-				concertDTO.getDates(),
-				performers,null);
-		concert.setId(concertDTO.getId());
-		return concert;
-	}
-	
+
 	static ConcertDTO toDTO(Concert concert){
 		List<PerformerDTO> performerDTOs = new ArrayList<>();
 		List<Performer> performers = concert.getPerformers();
