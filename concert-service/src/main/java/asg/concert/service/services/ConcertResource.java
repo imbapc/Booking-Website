@@ -127,7 +127,7 @@ public class ConcertResource {
 	@POST
 	@Path("/login")
 	public Response login(UserDTO userDTO) {
-		EntityManager em = createEM();
+		EntityManager em = PersistenceManager.instance().createEntityManager();
 		try {
 			em.getTransaction().begin();
 			User user;
