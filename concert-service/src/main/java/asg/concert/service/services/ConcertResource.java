@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 @Path("/concert-service")
@@ -41,7 +43,11 @@ public class ConcertResource {
             }
             concertDTO = ConcertMapper.toDTO(concert);
             em.getTransaction().commit();
-        } finally {
+        }
+        catch(NullPointerException e){
+            return Response.status(404).build();
+        }
+        finally {
             if(em!= null && em.isOpen()) {
                 em.close();
             }
@@ -61,12 +67,16 @@ public class ConcertResource {
     		em.getTransaction().begin();
     		
     		concert = em.find(Concert.class, id);
-            concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		if (concert == null) {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
+            concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
     		em.getTransaction().commit();
-    	}finally{
+    	}
+        catch(NullPointerException e){
+            return Response.status(404).build();
+        }
+    	finally{
     		em.close();
     	}
     	
@@ -84,10 +94,10 @@ public class ConcertResource {
             em.getTransaction().begin();
 
             performer = em.find(Performer.class, id);
-            performerDTO = PerformerMapper.toDTO(performer);
             if (performer == null){
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
+            performerDTO = PerformerMapper.toDTO(performer);
             em.getTransaction().commit();
         }
         catch(NullPointerException e){
@@ -97,6 +107,37 @@ public class ConcertResource {
             em.close();
         }
         return Response.ok().entity(performerDTO).build();
+    }
+
+    @GET
+    @Path("performers")
+    public Response retrieveAllPerformer(){
+        LOGGER.info("Retrieving all performers");
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Query query = em.createQuery("select performer from Performer performer");
+        List<Performer> performerList;
+        List<PerformerDTO> performerDTOList = new ArrayList<>();
+        try{
+            em.getTransaction().begin();
+
+            performerList = (List<Performer>) query.getResultList();
+            if (performerList == null){
+                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            }
+
+            for (int i = 0; i < performerList.size(); i++){
+                PerformerDTO performerDTO = PerformerMapper.toDTO(performerList.get(i));
+                performerDTOList.add(performerDTO);
+            }
+            em.getTransaction().commit();
+        }
+        catch(NullPointerException e){
+            return Response.status(404).build();
+        }
+        finally {
+            em.close();
+        }
+        return Response.ok().entity(performerDTOList).build();
     }
 }
 
