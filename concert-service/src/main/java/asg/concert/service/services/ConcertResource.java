@@ -184,11 +184,12 @@ public class ConcertResource {
         LOGGER.info("user " + userDTO.getUsername() + "tries to login with password" + userDTO.getPassword());
         EntityManager em = PersistenceManager.instance().createEntityManager();
         User user = UserMapper.toDomainModel(userDTO);
+        Query query = em.createQuery("select user from User user where user.username = :username").setParameter("username", user.getUsername());
         User userInDB;
         try{
             em.getTransaction().begin();
 
-            userInDB = em.find(User.class, user.getUsername());
+            userInDB = (User) query.getSingleResult();
             if (userInDB == null){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
