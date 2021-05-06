@@ -178,9 +178,27 @@ public class ConcertResource {
     }
 
     @Path("login")
-    public Response login(@CookieParam("bookingDTO") Cookie cookie){
-        LOGGER.info(cookie.getName());
-        return Response.ok().build();
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response login(UserDTO userDTO){
+        LOGGER.info("user " + userDTO.getUsername() + "tries to login with password" + userDTO.getPassword());
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        User user = UserMapper.toDomainModel(userDTO);
+        User userInDB;
+        try{
+            em.getTransaction().begin();
+
+            userInDB = em.find(User.class, user.getUsername());
+            if (userInDB == null){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+            else if(userInDB != user){
+                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+            }
+        }
+        finally{
+            em.close();
+        }
+        return Response.seeOther(URI.create("/")).entity(userInDB).build();
     }
 
 }
