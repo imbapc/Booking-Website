@@ -12,6 +12,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -176,6 +177,11 @@ public class ConcertResource {
         return Response.ok().entity(performerDTOList).build();
     }
 
+    @Path("login")
+    public Response login(@CookieParam("bookingDTO") Cookie cookie){
+        LOGGER.info(cookie.getName());
+        return Response.ok().build();
+    }
 
 }
 
