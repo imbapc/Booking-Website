@@ -1,16 +1,27 @@
 package asg.concert.service.services;
 
-import asg.concert.service.domain.Concert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import asg.concert.common.dto.*;
+import asg.concert.service.domain.*;
+import asg.concert.service.mapper.BookingMapper;
+import asg.concert.service.mapper.ConcertMapper;
+import asg.concert.service.mapper.PerformerMapper;
+import asg.concert.service.mapper.SeatMapper;
+import asg.concert.service.util.TheatreLayout;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.*;
 import java.net.URI;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Path("/concerts")
 @Produces(MediaType.APPLICATION_JSON)
