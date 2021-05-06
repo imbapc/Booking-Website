@@ -2,10 +2,10 @@ package asg.concert.service.services;
 
 import asg.concert.common.dto.*;
 import asg.concert.service.domain.*;
-import asg.concert.service.Mapper.BookingMapper;
-import asg.concert.service.Mapper.ConcertMapper;
-import asg.concert.service.Mapper.PerformerMapper;
-import asg.concert.service.Mapper.SeatMapper;
+import asg.concert.service.mapper.BookingMapper;
+import asg.concert.service.mapper.ConcertMapper;
+import asg.concert.service.mapper.PerformerMapper;
+import asg.concert.service.mapper.SeatMapper;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -23,120 +23,139 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-
-@Path("/concerts")
+//jiakai li
+@Path("/concert-service")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConcertResource {
+    private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subs = new Vector<>();
+    private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subsToRemove = new Vector<>();
+    private final Map<Long, Map<LocalDateTime, Integer>> seatsCount = new HashMap<>();
+    ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
 
     @GET
-    @Path("{id}")
-    public Response retrieveConcert(@PathParam("id") Long id) {
-        LOGGER.info("Retrieving Concert with id " + id);
+    @Path("/concerts")
+    public Response retrieveConcerts() {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-
-        Concert concert;
+        List<Concert> allConcerts;
+        List<ConcertDTO> result = new ArrayList<>();
         try {
-            em.getTransaction().begin();
+            allConcerts = em.createQuery("SELECT c FROM Concert c").getResultList();
+            if (allConcerts == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            for (Concert concert : allConcerts) {
+                result.add(ConcertMapper.toConcertDto(concert));
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
+    }
 
+    @GET
+    @Path("concerts/{id}")
+    public Response retrieveConcertById(@PathParam("id") long id) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+        Concert concert;
+        ConcertDTO dtoConcert;
+        try {
+            tx = em.getTransaction();
+            tx.begin();
             concert = em.find(Concert.class, id);
             if (concert == null) {
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
-
-            em.getTransaction().commit();
+            dtoConcert = ConcertMapper.toConcertDto(concert);
+            tx.setRollbackOnly();
+            tx.commit();
         } finally {
-            em.close();
-        }
-
-
-        return Response.ok().entity(concert).build();
-    }
-
-    @POST
-    public Response createConcert(Concert concert) {
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-
-        try {
-            em.getTransaction().begin();
-            em.persist(concert);
-            em.getTransaction().commit();
-        } finally {
-            em.close();
-        }
-
-        LOGGER.debug("Created concert with id: " + concert.getId());
-        return Response.created(URI.create("/concerts/" + concert.getId())).build();
-    }
-
-    @PUT
-    public Response updateConcert(Concert concert) {
-        LOGGER.info("Updating Concert with id " + concert.getId());
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-
-        try {
-            em.getTransaction().begin();
-
-            Concert found = em.find(Concert.class, concert.getId());
-            if (found == null) {
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
             }
-            em.merge(concert);
-
-            em.getTransaction().commit();
-        } finally {
-            em.close();
-        }
-
-        return Response.noContent().build();
-    }
-
-    @DELETE
-    @Path("{id}")
-    public Response deleteConcert(@PathParam("id") Long id) {
-        LOGGER.info("Deleting Concert with id " + id);
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-
-        try {
-            em.getTransaction().begin();
-
-            Concert concert = em.find(Concert.class, id);
-            if (concert == null) {
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            if (em != null && em.isOpen()) {
+                em.close();
             }
-            em.remove(concert);
-
-            em.getTransaction().commit();
-        } finally {
-            em.close();
         }
-
-        return Response.noContent().build();
+        return Response.ok().entity(dtoConcert).build();
     }
 
-    @DELETE
-    public Response deleteConcerts() {
+    @GET
+    @Path("/concerts/summaries")
+    public Response retrieveConcertSummaries() {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        TypedQuery<Concert> concertQuery = em.createQuery("select c from Concert c", Concert.class);
-        List<Concert> concerts = concertQuery.getResultList();
+        List<Concert> allConcerts;
+        List<ConcertSummaryDTO> result = new ArrayList<>();
         try {
-            em.getTransaction().begin();
-
-            for (Concert concert : concerts) {
-                em.remove(concert);
+            allConcerts = em.createQuery("SELECT c FROM Concert c").getResultList();
+            if (allConcerts == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
-
-            em.getTransaction().commit();
+            for (Concert concert : allConcerts) {
+                result.add(ConcertMapper.toConcertSummaryDto(concert));
+            }
         } finally {
-            em.close();
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
-
-        return Response.noContent().build();
+        return Response.ok().entity(result).build();
     }
-    
+
+    @GET
+    @Path("/performers")
+    public Response retrievePerformers() {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Performer> allPerformers;
+        List<PerformerDTO> result = new ArrayList<>();
+        try {
+            allPerformers = em.createQuery("SELECT p FROM Performer p").getResultList();
+            if (allPerformers == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            for (Performer performer : allPerformers) {
+                result.add(PerformerMapper.toPerformerDto(performer));
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
+    }
+
+    @GET
+    @Path("/performers/{id}")
+    public Response retrievePerformerById(@PathParam("id") long id) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+        Performer performer;
+        PerformerDTO dtoPerformer;
+        try {
+            tx = em.getTransaction();
+            tx.begin();
+            performer = em.find(Performer.class, id);
+            if (performer == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            dtoPerformer = PerformerMapper.toPerformerDto(performer);
+            tx.setRollbackOnly();
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(dtoPerformer).build();
+    }
+//frederick
 	@POST
 	@Path("/login")
 	public Response login(UserDTO userDTO) {
@@ -150,7 +169,7 @@ public class ConcertResource {
 						.setParameter("password", userDTO.getPassword())
 						.getSingleResult();
 			} catch (NoResultException e) { // No username-password match
-				return Response.status(Status.UNAUTHORIZED).build();
+				return Response.status(Response.Status.UNAUTHORIZED).build();
 			} finally {
 				em.getTransaction().commit();
 			}
