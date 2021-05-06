@@ -34,6 +34,8 @@ public class ConcertDTO {
     @ElementCollection
     @JsonDeserialize(contentUsing = LocalDateTimeDeserializer.class)
     @JsonSerialize(contentUsing = LocalDateTimeSerializer.class)
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
     private List<LocalDateTime> dates = new ArrayList<>();
 
     @org.hibernate.annotations.Fetch(
