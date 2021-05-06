@@ -15,6 +15,7 @@ import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.ArrayList;
@@ -186,6 +187,7 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         User user = UserMapper.toDomainModel(userDTO);
         String userPassword = user.getPassword();
+        Response.ResponseBuilder builder = Response.ok();
         Query query = em.createQuery("select user from User user where user.username = :username").setParameter("username", user.getUsername());
         User userInDB;
         try{
@@ -204,9 +206,8 @@ public class ConcertResource {
         finally{
             em.close();
         }
-        Cookie cookie = new Cookie("auth", user.getUsername());
-        return Response.ok().entity(cookie).build();
+        builder.cookie(new NewCookie("auth", user.toString()));
+        return builder.status(200).build();
     }
-
 }
 
