@@ -40,7 +40,7 @@ public class ConcertResource {
             concert = em.find(Concert.class, id);
             Hibernate.initialize(concert.getDates());
             if (concert == null) {
-                throw new WebApplica    tionException(Response.Status.NOT_FOUND);
+                throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
             concertDTO = ConcertMapper.toDTO(concert);
             em.getTransaction().commit();
