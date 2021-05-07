@@ -290,17 +290,17 @@ public class ConcertResource {
 
     @GET
     @Path("seats/{date}")
-    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("Status") BookingStatus bookingStatus){
+    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("Status") String bookingStatus){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
         List<Seat> seatList;
         List<SeatDTO> seatDTOList = new ArrayList<>();
         TypedQuery<Seat> query;
-        if (bookingStatus == BookingStatus.Any){
+        if (bookingStatus == "Any"){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
             query.setParameter("date", date);
         }
-        else if(bookingStatus == BookingStatus.Booked){
+        else if(bookingStatus == "Booked"){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true");
             query.setParameter("date", date);
         }
