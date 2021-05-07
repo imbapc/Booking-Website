@@ -247,16 +247,15 @@ public class ConcertResource {
     @POST
     @Path("bookings")
     public Response booking(@CookieParam("auth") Cookie cookie, BookingRequestDTO bookingRequestDTO) {
-        LOGGER.info("For Booking the cookie username is" + cookie.getValue());
+            LOGGER.info("For Booking the cookie username is" + cookie.getValue());
         if (cookie.getValue() == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
         EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query;
         List<Seat> seatList;
-        query = em.createQuery("select booking from Booking booking " +  "inner join booking.seats seat" +
-                "where booking.concertId= :concertId and booking.date= :date and seat.label IN (?1)", Booking.class)
-                .setParameter("concertId", bookingRequestDTO.getConcertId()).setParameter("date", bookingRequestDTO.getDate())
+        query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (?1)", Seat.class)
+                .setParameter("date", bookingRequestDTO.getDate())
                 .setParameter("1", bookingRequestDTO.getSeatLabels());
         query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
