@@ -283,8 +283,8 @@ public class ConcertResource {
         finally {
             em.close();
         }
-
-        return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
+        LOGGER.info("LocalDateTime: " + bookingRequestDTO.getDate());
+        return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
     @GET
@@ -295,7 +295,7 @@ public class ConcertResource {
         List<Seat> seatList;
         List<SeatDTO> seatDTOList = new ArrayList<>();
         TypedQuery<Seat> query;
-        LOGGER.info(bookingStatus);
+        LOGGER.info("BookingStatus" + bookingStatus);
         if (bookingStatus == "Any"){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
             query.setParameter("date", date);
