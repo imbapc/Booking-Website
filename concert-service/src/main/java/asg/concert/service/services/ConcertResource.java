@@ -8,6 +8,9 @@ import asg.concert.service.mapper.PerformerMapper;
 import asg.concert.service.mapper.SeatMapper;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
+import org.checkerframework.checker.units.qual.C;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
 import javax.ws.rs.*;
@@ -29,7 +32,7 @@ public class ConcertResource {
     private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subsToRemove = new Vector<>();
     private final Map<Long, Map<LocalDateTime, Integer>> seatsCount = new HashMap<>();
     ExecutorService threadPool = Executors.newSingleThreadExecutor();
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
 
     @GET
     @Path("/concerts")
@@ -241,7 +244,9 @@ public class ConcertResource {
 
     @POST
     @Path("bookings")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response booking(@CookieParam("auth") Cookie auth, BookingRequestDTO bookingRequestDTO) {
+        LOGGER.info("try to booking");
         if (auth.getValue() == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
