@@ -257,8 +257,7 @@ public class ConcertResource {
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
         query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
-        query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         try{
             em.getTransaction().begin();
             seatList = (List<Seat>) query.getResultList();
