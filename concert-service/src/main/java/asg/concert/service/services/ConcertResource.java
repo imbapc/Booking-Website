@@ -266,7 +266,7 @@ public class ConcertResource {
                 if(seat.getIsBooked()){
                     throw new WebApplicationException(Response.Status.FORBIDDEN);
                 }
-                seat.setIsBooked(true);
+                else{seat.setIsBooked(true);}
             }
             Booking booking = new Booking();
             booking.setConcertId(bookingRequestDTO.getConcertId());
