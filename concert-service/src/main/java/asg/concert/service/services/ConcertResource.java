@@ -296,11 +296,11 @@ public class ConcertResource {
         List<SeatDTO> seatDTOList = new ArrayList<>();
         TypedQuery<Seat> query;
         LOGGER.info("BookingStatus" + bookingStatus);
-        if (bookingStatus == BookingStatus.Any){
+        if (bookingStatus.equals(BookingStatus.Any)){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
             query.setParameter("date", date);
         }
-        else if(bookingStatus == BookingStatus.Booked){
+        else if(bookingStatus.equals(BookingStatus.Booked)){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true");
             query.setParameter("date", date);
         }
@@ -308,7 +308,7 @@ public class ConcertResource {
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=false");
             query.setParameter("date", date);
         }
-        seatList = (List<Seat>) query.getResultList();
+        seatList = query.getResultList();
         for (Seat seat: seatList){
             SeatDTO seatDTO = SeatMapper.toSeatDto(seat);
             seatDTOList.add(seatDTO);
