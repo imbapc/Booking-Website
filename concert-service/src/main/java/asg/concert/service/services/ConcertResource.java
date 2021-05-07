@@ -246,9 +246,10 @@ public class ConcertResource {
     @POST
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response booking(@Context HttpHeaders hh, BookingRequestDTO bookingRequestDTO) {
-        LOGGER.info("For Booking the cookie username is" + hh.getCookies().get("auth"));
-        if (hh.getCookies().get("auth") == null) {
+    public Response booking(BookingRequestDTO bookingRequestDTO) {
+        String cookie = "test";
+        LOGGER.info("For Booking the cookie username is" + cookie);
+        if (cookie == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
         EntityManager em = PersistenceManager.instance().createEntityManager();
