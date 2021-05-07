@@ -254,9 +254,9 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query;
         List<Seat> seatList;
-        query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (?1)", Seat.class)
+        query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class)
                 .setParameter("date", bookingRequestDTO.getDate())
-                .setParameter("1", bookingRequestDTO.getSeatLabels());
+                .setParameter("labels", bookingRequestDTO.getSeatLabels());
         query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
 
         try{
