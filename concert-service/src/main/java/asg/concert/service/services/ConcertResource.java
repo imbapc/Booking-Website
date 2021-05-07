@@ -290,7 +290,7 @@ public class ConcertResource {
 
     @GET
     @Path("seats/{date}")
-    public Response retrieveSeats(@PathParam("date") String inputDate, BookingStatus bookingStatus){
+    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("Status") BookingStatus bookingStatus){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
         List<Seat> seatList;
