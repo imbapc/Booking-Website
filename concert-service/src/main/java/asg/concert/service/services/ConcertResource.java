@@ -246,8 +246,6 @@ public class ConcertResource {
     
     @POST
     @Path("bookings")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
     public Response booking( /*@CookieParam("auth") Cookie cookie,*/ BookingRequestDTO bookingRequestDTO) {
         String cookie = "test";
         LOGGER.info("For Booking the cookie username is" + cookie);
