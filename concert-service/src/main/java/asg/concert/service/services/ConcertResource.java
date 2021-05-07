@@ -246,7 +246,7 @@ public class ConcertResource {
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response booking(BookingRequestDTO bookingRequestDTO, @CookieParam("auth") String username) {
-        LOGGER.info(username);
+        LOGGER.info("For Booking the cookie username is" + username);
         if (username == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
