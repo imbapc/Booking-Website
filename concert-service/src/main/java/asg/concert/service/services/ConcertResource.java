@@ -283,24 +283,24 @@ public class ConcertResource {
         finally {
             em.close();
         }
-        LOGGER.info("LocalDateTime: " + bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        LOGGER.info("Length of seats", booking.getSeats().size());
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
     @GET
     @Path("seats/{date}")
-    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("status") String bookingStatus){
+    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("status") BookingStatus bookingStatus){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
         List<Seat> seatList;
         List<SeatDTO> seatDTOList = new ArrayList<>();
         TypedQuery<Seat> query;
         LOGGER.info("BookingStatus" + bookingStatus);
-        if (bookingStatus == "Any"){
+        if (bookingStatus == BookingStatus.Any){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
             query.setParameter("date", date);
         }
-        else if(bookingStatus == "Booked"){
+        else if(bookingStatus == BookingStatus.Booked){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true");
             query.setParameter("date", date);
         }
