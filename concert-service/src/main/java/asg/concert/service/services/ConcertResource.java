@@ -13,10 +13,8 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
+import javax.ws.rs.CookieParam;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,12 +210,12 @@ public class ConcertResource {
     @POST
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response booking(BookingRequestDTO bookingRequestDTO @CookieParam("auth") String username) {
+    public Response booking(BookingRequestDTO bookingRequestDTO, @CookieParam("auth") String username) {
     	if (username == null) {
-    		return Response.seeOther().build();
+    		return Response.seeOther(URI.create("/login")).build();
     	}
     	
-    	return Response.ok()
+    	return Response.ok().build();
     }
 }
 
