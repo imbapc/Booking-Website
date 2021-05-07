@@ -208,7 +208,7 @@ public class ConcertResource {
             em.close();
         }
         builder.cookie(new NewCookie("auth", user.toString()));
-        return builder.status(200).build();
+        return builder.build();
     }
     @GET
     @Path("seats/{date}")
