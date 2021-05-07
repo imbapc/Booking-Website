@@ -247,13 +247,14 @@ public class ConcertResource {
     @POST
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response booking(@CookieParam("auth") String cookie) {
-        BookingRequestDTO bookingRequestDTO = new BookingRequestDTO();
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response booking( /*@CookieParam("auth") Cookie cookie,*/ BookingRequestDTO bookingRequestDTO) {
+        String cookie = "test";
         LOGGER.info("For Booking the cookie username is" + cookie);
         if (cookie == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
-        /*EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query;
         List<Seat> seatList;
         query = em.createQuery("select booking from Booking booking" +  "inner join booking.seats seat" +
@@ -281,7 +282,7 @@ public class ConcertResource {
         }
         finally {
             em.close();
-        }*/
+        }
 
         return Response.seeOther(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
     }
