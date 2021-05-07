@@ -181,5 +181,64 @@ public class ConcertResource {
 			em.close();
 		}
 	}
-    
+
+    @GET
+    @Path("/bookings")
+    public Response retrieveBookings(@CookieParam("auth") Cookie auth) {
+        if (auth == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Booking> bookings;
+        List<BookingDTO> results = new ArrayList<>();
+        try {
+            TypedQuery<Booking> bookingQuery = em
+                    .createQuery(
+                            "SELECT b FROM Booking b " +
+                                    "WHERE b.bookingUser = :username",
+                            Booking.class)
+                    .setParameter("username", auth.getValue());
+            bookings = bookingQuery.getResultList();
+            for (Booking booking : bookings) {
+                results.add(BookingMapper.toBookingDto(booking));
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(results).build();
+    }
+
+    @GET
+    @Path("/bookings/{id}")
+    public Response retrieveBookingById(@PathParam("id") long bookingId,
+                                        @CookieParam("auth") Cookie auth) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Booking> bookings;
+        BookingDTO result;
+        try {
+            TypedQuery<Booking> bookingQuery = em
+                    .createQuery(
+                            "SELECT b FROM Booking b " +
+                                    "WHERE b.id = :bookingId",
+                            Booking.class)
+                    .setParameter("bookingId", bookingId);
+            bookings = bookingQuery.getResultList();
+            if (bookings.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            Booking booking = bookings.get(0);
+            if (!booking.getBookingUser().equals(auth.getValue())) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+            result = BookingMapper.toBookingDto(booking);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
+    }
 }
