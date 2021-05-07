@@ -182,6 +182,7 @@ public class ConcertResource {
     @POST
     @Path("login")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response login(UserDTO userDTO){
         LOGGER.info("user " + userDTO.getUsername() + " tries to login with password " + userDTO.getPassword());
         EntityManager em = PersistenceManager.instance().createEntityManager();
