@@ -280,7 +280,7 @@ public class ConcertResource {
             em.close();
         }
 
-        return Response.seeOther(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
+        return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
     }
 }
 
