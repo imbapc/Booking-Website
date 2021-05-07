@@ -241,4 +241,31 @@ public class ConcertResource {
         }
         return Response.ok().entity(result).build();
     }
+    
+	@POST
+	@Path("/subscribe/concertInfo")
+	public void subscribeConcert(@Suspended AsyncResponse response, @CookieParam("auth") Cookie auth, ConcertInfoSubscriptionDTO request) {
+		EntityManager em = PersistenceManager.instance().createEntityManager();
+		try {
+			if (auth == null) {
+				response.resume(Response.status(Response.Status.UNAUTHORIZED).build());
+			}
+
+			em.getTransaction().begin();
+
+			Concert concert = em.find(Concert.class, request.getConcertId());
+			if (concert == null || !concert.getDates().contains(request.getDate())) {
+				response.resume(Response.status(Response.Status.BAD_REQUEST).build());
+			}
+		} finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+		}
+		synchronized (subs) { 
+			if (!subs.contains(request.getDate())) {
+	                subs.add(Pair.of(response, request));
+	        }
+		}
+	}
 }
