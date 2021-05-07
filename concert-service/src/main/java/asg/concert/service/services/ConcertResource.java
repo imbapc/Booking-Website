@@ -283,13 +283,13 @@ public class ConcertResource {
         finally {
             em.close();
         }
-        LOGGER.info("LocalDateTime: " + bookingRequestDTO.getDate());
+        LOGGER.info("LocalDateTime: " + bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
     @GET
     @Path("seats/{date}")
-    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("Status") String bookingStatus){
+    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("status") String bookingStatus){
         EntityManager em = PersistenceManager.instance().createEntityManager();
         LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
         List<Seat> seatList;
