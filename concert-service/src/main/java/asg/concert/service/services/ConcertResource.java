@@ -166,6 +166,29 @@ public class ConcertResource {
         }
         return Response.ok().entity(performerDTOList).build();
     }
-    
+	@POST
+	@Path("/login")
+	public Response login(UserDTO userDTO) {
+		EntityManager em = PersistenceManager.instance().createEntityManager();
+		try {
+			em.getTransaction().begin();
+			User user;
+			try {
+				user = em.createQuery("SELECT u FROM User u where u.username = :username AND u.password = :password", User.class)
+						.setParameter("username", userDTO.getUsername())
+						.setParameter("password", userDTO.getPassword())
+						.getSingleResult();
+			} catch (NoResultException e) { // No username-password match
+				return Response.status(Response.Status.UNAUTHORIZED).build();
+			} finally {
+				em.getTransaction().commit();
+			}
+
+	        NewCookie cookie = new NewCookie("auth", userDTO.getUsername());
+	        return Response.ok().cookie(cookie).build();
+		} finally {
+			em.close();
+		}
+	}
     
 }
