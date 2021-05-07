@@ -2,6 +2,11 @@ package asg.concert.common.dto;
 
 
 
+import asg.concert.common.jackson.LocalDateTimeDeserializer;
+import asg.concert.common.jackson.LocalDateTimeSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +20,8 @@ import java.util.List;
 public class BookingRequestDTO {
 
     private long concertId;
+    @JsonDeserialize(using= LocalDateTimeDeserializer.class)
+    @JsonSerialize(using= LocalDateTimeSerializer.class)
     private LocalDateTime date;
     private List<String> seatLabels = new ArrayList<>();
 

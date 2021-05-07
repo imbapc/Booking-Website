@@ -22,10 +22,8 @@ import java.util.List;
  * performers   the performers in the concert
  * blurb        the concert's description
  */
-@Entity
 public class ConcertDTO {
 
-    @Id
     private Long id;
     private String title;
     private String imageName;
@@ -97,7 +95,7 @@ public class ConcertDTO {
     public void setDates(List<LocalDateTime> dates) {
         this.dates = dates;
     }
-    
+
     public List<PerformerDTO> getPerformers() {
         return performers;
     }

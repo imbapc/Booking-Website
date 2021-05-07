@@ -5,8 +5,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import asg.concert.common.types.Genre;
 
-import javax.persistence.*;
-
 /**
  * DTO class to represent performers.
  * <p>
@@ -17,10 +15,8 @@ import javax.persistence.*;
  * genre      the performer's genre.
  * blurb      the performer's description.
  */
-@Entity
 public class PerformerDTO implements Comparable<PerformerDTO> {
 
-    @Id
     private Long id;
     private String name;
     private String imageName;

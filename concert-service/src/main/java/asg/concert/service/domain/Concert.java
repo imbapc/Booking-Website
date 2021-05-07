@@ -68,7 +68,7 @@ public class Concert {
     public long getId() {
         return id;
     }
-    
+
     public void setId(long id) {
     	this.id = id;
     }
@@ -96,7 +96,7 @@ public class Concert {
     public void setBlurb(String blurb) {
         this.blurb = blurb;
     }
-    
+
     public List<LocalDateTime> getDates() {
         return dates;
     }
