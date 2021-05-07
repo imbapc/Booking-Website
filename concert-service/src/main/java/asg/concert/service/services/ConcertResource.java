@@ -166,6 +166,6 @@ public class ConcertResource {
         }
         return Response.ok().entity(performerDTOList).build();
     }
-
-
+    
+    
 }

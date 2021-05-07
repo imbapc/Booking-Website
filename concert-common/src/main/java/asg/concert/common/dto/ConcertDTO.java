@@ -85,7 +85,7 @@ public class ConcertDTO {
     public void setDates(List<LocalDateTime> dates) {
         this.dates = dates;
     }
-    
+
     public List<PerformerDTO> getPerformers() {
         return performers;
     }
