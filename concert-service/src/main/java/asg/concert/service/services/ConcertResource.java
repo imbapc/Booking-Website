@@ -248,6 +248,7 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         TypedQuery<Seat> query;
         List<Seat> seatList;
+        Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
         query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
         query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
@@ -256,16 +257,16 @@ public class ConcertResource {
             em.getTransaction().begin();
             seatList = (List<Seat>) query.getResultList();
             if (seatList.isEmpty()){return Response.status(Response.Status.NOT_FOUND).build();}
-            else{
-                for (Seat seat:seatList){
-                    if(seat.getIsBooked()){
+            else {
+                for (Seat seat : seatList) {
+                    if (seat.getIsBooked()) {
                         return Response.status(Response.Status.FORBIDDEN).build();
+                    } else {
+                        seat.setIsBooked(true);
                     }
-                    else{seat.setIsBooked(true);}
                 }
 
             }
-            Booking booking = new Booking();
             booking.setConcertId(bookingRequestDTO.getConcertId());
             booking.setDate(bookingRequestDTO.getDate());
             booking.setSeats(seatList);
