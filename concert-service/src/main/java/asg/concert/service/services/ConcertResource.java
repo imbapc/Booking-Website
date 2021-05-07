@@ -1,7 +1,9 @@
 package asg.concert.service.services;
 
 import asg.concert.common.dto.*;
+import asg.concert.common.types.BookingStatus;
 import asg.concert.service.domain.*;
+import asg.concert.service.jaxrs.LocalDateTimeParam;
 import asg.concert.service.mapper.BookingMapper;
 import asg.concert.service.mapper.ConcertMapper;
 import asg.concert.service.mapper.PerformerMapper;
@@ -285,4 +287,33 @@ public class ConcertResource {
 
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
     }
+
+    @GET
+    @Path("seats/{date}")
+    public Response retrieveSeats(@PathParam("date") String inputDate, BookingStatus bookingStatus){
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
+        List<Seat> seatList;
+        List<SeatDTO> seatDTOList = new ArrayList<>();
+        TypedQuery<Seat> query;
+        if (bookingStatus == BookingStatus.Any){
+            query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
+            query.setParameter("date", date);
+        }
+        else if(bookingStatus == BookingStatus.Booked){
+            query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true");
+            query.setParameter("date", date);
+        }
+        else{
+            query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=false");
+            query.setParameter("date", date);
+        }
+        seatList = (List<Seat>) query.getResultList();
+        for (Seat seat: seatList){
+            SeatDTO seatDTO = SeatMapper.toSeatDto(seat);
+            seatDTOList.add(seatDTO);
+        }
+        return Response.ok().entity(seatDTOList).build();
+    }
+
 }
