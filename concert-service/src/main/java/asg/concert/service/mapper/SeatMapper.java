@@ -1,12 +1,10 @@
-package asg.concert.service.services;
+package asg.concert.service.mapper;
 
 import asg.concert.common.dto.SeatDTO;
 import asg.concert.service.domain.Seat;
 
 public class SeatMapper {
-	
-    static SeatDTO toDTO(Seat seat){
+    public static SeatDTO toSeatDto(Seat seat) {
         return new SeatDTO(seat.getLabel(), seat.getPrice());
     }
-    
 }

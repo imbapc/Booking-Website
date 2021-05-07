@@ -1,7 +1,5 @@
 package asg.concert.common.dto;
 
-
-
 import asg.concert.common.jackson.LocalDateTimeDeserializer;
 import asg.concert.common.jackson.LocalDateTimeSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -20,12 +18,11 @@ import java.util.List;
 public class BookingRequestDTO {
 
     private long concertId;
-    @JsonDeserialize(using= LocalDateTimeDeserializer.class)
-    @JsonSerialize(using= LocalDateTimeSerializer.class)
     private LocalDateTime date;
     private List<String> seatLabels = new ArrayList<>();
 
-    public BookingRequestDTO(){}
+    public BookingRequestDTO() {
+    }
 
     public BookingRequestDTO(long concertId, LocalDateTime date) {
         this.concertId = concertId;
@@ -46,6 +43,8 @@ public class BookingRequestDTO {
         this.concertId = concertId;
     }
 
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
     public LocalDateTime getDate() {
         return date;
     }

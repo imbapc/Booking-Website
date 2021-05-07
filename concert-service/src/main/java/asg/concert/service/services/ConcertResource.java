@@ -1,286 +1,244 @@
 package asg.concert.service.services;
 
-import asg.concert.service.jaxrs.*;
-import asg.concert.common.types.BookingStatus;
-import asg.concert.service.domain.*;
 import asg.concert.common.dto.*;
-import org.hibernate.Hibernate;
-import org.hibernate.criterion.NotNullExpression;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import asg.concert.service.domain.*;
+import asg.concert.service.mapper.BookingMapper;
+import asg.concert.service.mapper.ConcertMapper;
+import asg.concert.service.mapper.PerformerMapper;
+import asg.concert.service.mapper.SeatMapper;
+import asg.concert.service.util.TheatreLayout;
+import org.apache.commons.lang3.tuple.Pair;
 
-
-import javax.persistence.*;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
+import javax.persistence.TypedQuery;
+import javax.persistence.NoResultException;
 import javax.ws.rs.*;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
-import javax.ws.rs.CookieParam;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Path("/concert-service")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConcertResource {
+    private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subs = new Vector<>();
+    private static final List<Pair<AsyncResponse, ConcertInfoSubscriptionDTO>> subsToRemove = new Vector<>();
+    private final Map<Long, Map<LocalDateTime, Integer>> seatsCount = new HashMap<>();
+    ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(ConcertResource.class);
 
     @GET
-    @Path("concerts/{id}")
-    public Response retrieveConcert(@PathParam("id") Long id) {
-        LOGGER.info("Retrieving Concert with id " + id);
+    @Path("/concerts")
+    public Response retrieveConcerts() {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-
-        Concert concert;
-        ConcertDTO concertDTO;
+        List<Concert> allConcerts;
+        List<ConcertDTO> result = new ArrayList<>();
         try {
-            em.getTransaction().begin();
-
-            concert = em.find(Concert.class, id);
-            Hibernate.initialize(concert.getDates());
-            if (concert == null) {
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            allConcerts = em.createQuery("SELECT c FROM Concert c").getResultList();
+            if (allConcerts == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
-            concertDTO = ConcertMapper.toDTO(concert);
-            em.getTransaction().commit();
-        }
-        catch(NullPointerException e){
-            return Response.status(404).build();
-        }
-        finally {
-            if(em!= null && em.isOpen()) {
+            for (Concert concert : allConcerts) {
+                result.add(ConcertMapper.toConcertDto(concert));
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
                 em.close();
             }
         }
-
-        return Response.ok().entity(concertDTO).build();
+        return Response.ok().entity(result).build();
     }
 
     @GET
-    @Path("concerts")
-    public Response retrieveAllConcerts(){
-        LOGGER.info("Retrieve ALl concerts");
+    @Path("concerts/{id}")
+    public Response retrieveConcertById(@PathParam("id") long id) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        Query query = em.createQuery("select concert from Concert concert", Concert.class);
-
-        List<Concert> concertList;
-        List<ConcertDTO> concertDTOList = new ArrayList<>();
-
-        try{
-            em.getTransaction().begin();
-
-            concertList = (List<Concert>) query.getResultList();
-            if (concertList == null){
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+        EntityTransaction tx = null;
+        Concert concert;
+        ConcertDTO dtoConcert;
+        try {
+            tx = em.getTransaction();
+            tx.begin();
+            concert = em.find(Concert.class, id);
+            if (concert == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
-            for (Concert concert: concertList){
-                Hibernate.initialize(concert.getDates());
-                ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
-                concertDTOList.add(concertDTO);
+            dtoConcert = ConcertMapper.toConcertDto(concert);
+            tx.setRollbackOnly();
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
             }
-            em.getTransaction().commit();
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
-        catch(NullPointerException e){
-            return Response.status(404).build();
-        }
-        finally {
-            em.close();
-        }
-
-        return Response.ok().entity(concertDTOList).build();
+        return Response.ok().entity(dtoConcert).build();
     }
 
     @GET
-    @Path("concerts/summaries")
+    @Path("/concerts/summaries")
     public Response retrieveConcertSummaries() {
-    	LOGGER.info("Retrieving All Concert Summaries");
-    	EntityManager em = PersistenceManager.instance().createEntityManager();
-    	Query query = em.createQuery("select concert from Concert concert", Concert.class);
-    	List<Concert> concertList;
-    	List<ConcertSummaryDTO> concertSummaryDTOList = new ArrayList<>();
-    	try {
-    		em.getTransaction().begin();
-
-            concertList = (List<Concert>)query.getResultList();
-    		if (concertList == null) {
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Concert> allConcerts;
+        List<ConcertSummaryDTO> result = new ArrayList<>();
+        try {
+            allConcerts = em.createQuery("SELECT c FROM Concert c").getResultList();
+            if (allConcerts == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
-            for (Concert concert: concertList){
-                ConcertSummaryDTO concertSummaryDTO = ConcertMapper.toSummaryDTO(concert);
-                concertSummaryDTOList.add(concertSummaryDTO);
+            for (Concert concert : allConcerts) {
+                result.add(ConcertMapper.toConcertSummaryDto(concert));
             }
-    		em.getTransaction().commit();
-    	}
-        catch(NullPointerException e){
-            return Response.status(404).build();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
-    	finally{
-    		em.close();
-    	}
-    	
-    	return Response.ok().entity(concertSummaryDTOList).build();
+        return Response.ok().entity(result).build();
     }
 
     @GET
-    @Path("performers/{id}")
-    public Response retrievePerformer(@PathParam("id") Long id){
-        LOGGER.info("Retrieving Performer with id" + id);
+    @Path("/performers")
+    public Response retrievePerformers() {
         EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Performer> allPerformers;
+        List<PerformerDTO> result = new ArrayList<>();
+        try {
+            allPerformers = em.createQuery("SELECT p FROM Performer p").getResultList();
+            if (allPerformers == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            for (Performer performer : allPerformers) {
+                result.add(PerformerMapper.toPerformerDto(performer));
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
+    }
+
+    @GET
+    @Path("/performers/{id}")
+    public Response retrievePerformerById(@PathParam("id") long id) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
         Performer performer;
-        PerformerDTO performerDTO;
-        try{
-            em.getTransaction().begin();
-
+        PerformerDTO dtoPerformer;
+        try {
+            tx = em.getTransaction();
+            tx.begin();
             performer = em.find(Performer.class, id);
-            if (performer == null){
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+            if (performer == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
             }
-            performerDTO = PerformerMapper.toDTO(performer);
-            em.getTransaction().commit();
+            dtoPerformer = PerformerMapper.toPerformerDto(performer);
+            tx.setRollbackOnly();
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
-        catch(NullPointerException e){
-            return Response.status(404).build();
-        }
-        finally {
-            em.close();
-        }
-        return Response.ok().entity(performerDTO).build();
+        return Response.ok().entity(dtoPerformer).build();
     }
 
-    @GET
-    @Path("performers")
-    public Response retrieveAllPerformers(){
-        LOGGER.info("Retrieving all performers");
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-        Query query = em.createQuery("select performer from Performer performer",Performer.class);
-        List<Performer> performerList;
-        List<PerformerDTO> performerDTOList = new ArrayList<>();
-        try{
-            em.getTransaction().begin();
-
-            performerList = (List<Performer>) query.getResultList();
-            if (performerList == null){
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
-            }
-
-            for (Performer performer: performerList){
-                PerformerDTO performerDTO = PerformerMapper.toDTO(performer);
-                performerDTOList.add(performerDTO);
-            }
-            em.getTransaction().commit();
-        }
-        catch(NullPointerException e){
-            return Response.status(404).build();
-        }
-        finally {
-            em.close();
-        }
-        return Response.ok().entity(performerDTOList).build();
-    }
-
-    @POST
-    @Path("login")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response login(UserDTO userDTO){
-        LOGGER.info("user " + userDTO.getUsername() + " tries to login with password " + userDTO.getPassword());
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-        User user = UserMapper.toDomainModel(userDTO);
-        String userPassword = user.getPassword();
-        Response.ResponseBuilder builder = Response.ok();
-        Query query = em.createQuery("select user from User user where user.username = :username", User.class).setParameter("username", user.getUsername());
-        User userInDB;
-        try{
-            em.getTransaction().begin();
-
-            userInDB = (User) query.getSingleResult();
-            String passwordToCheck = userInDB.getPassword();
-            if(!passwordToCheck.equals(userPassword)){
-                throw new WebApplicationException(Response.Status.UNAUTHORIZED);
-            }
-            em.getTransaction().commit();
-        }
-        catch (NoResultException e){
-            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
-        }
-        finally{
-            em.close();
-        }
-        builder.cookie(new NewCookie("auth", user.toString()));
-        return builder.build();
-    }
-
-    @GET
-    @Path("seats/{date}")
-    public Response retrieveSeats(@QueryParam("status") BookingStatus bookingStatus, @PathParam("date")String inputDate) {
-        LOGGER.info("try to retrieve seats" + inputDate);
-        LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
-        EntityManager em = PersistenceManager.instance().createEntityManager();
-        Query query;
-        List<SeatDTO> seatDTOList = new ArrayList<>();
-        List<Seat> seatList;
-        if (bookingStatus == BookingStatus.Any) {
-            query = em.createQuery("select seat from Seat seat where seat.date = :date", Seat.class).setParameter("date", date);
-        }
-        else if (bookingStatus == BookingStatus.Booked){
-            query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true", Seat.class).setParameter("date", date);
-        }
-        else {
-            query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=false", Seat.class).setParameter("date", date);
-        }
-        try{
-            em.getTransaction().begin();
-            seatList = (List<Seat>) query.getResultList();
-            for (Seat seat: seatList){
-                SeatDTO seatDTO = SeatMapper.toDTO(seat);
-                seatDTOList.add(seatDTO);
-            }
-            em.getTransaction().commit();
-        }
-        finally{
-            em.close();
-        }
-        return Response.ok().entity(seatDTOList).build();
-    }
     
-    @POST
-    @Path("bookings")
-    public Response booking(@CookieParam("auth") Cookie cookie, BookingRequestDTO bookingRequestDTO) {
-            LOGGER.info("For Booking the cookie username is" + cookie.getValue());
-        if (cookie.getValue() == null) {
-            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+	@POST
+	@Path("/login")
+	public Response login(UserDTO userDTO) {
+		EntityManager em = PersistenceManager.instance().createEntityManager();
+		try {
+			em.getTransaction().begin();
+			User user;
+			try {
+				user = em.createQuery("SELECT u FROM User u where u.username = :username AND u.password = :password", User.class)
+						.setParameter("username", userDTO.getUsername())
+						.setParameter("password", userDTO.getPassword())
+						.getSingleResult();
+			} catch (NoResultException e) { // No username-password match
+				return Response.status(Response.Status.UNAUTHORIZED).build();
+			} finally {
+				em.getTransaction().commit();
+			}
+
+	        NewCookie cookie = new NewCookie("auth", userDTO.getUsername());
+	        return Response.ok().cookie(cookie).build();
+		} finally {
+			em.close();
+		}
+	}
+
+    @GET
+    @Path("/bookings")
+    public Response retrieveBookings(@CookieParam("auth") Cookie auth) {
+        if (auth == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
         }
+
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        Query query;
-        List<Seat> seatList;
-        query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class)
-                .setParameter("date", bookingRequestDTO.getDate())
-                .setParameter("labels", bookingRequestDTO.getSeatLabels());
-        query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
-
-        try{
-            em.getTransaction().begin();
-            seatList = (List<Seat>) query.getResultList();
-            for (Seat seat: seatList) {
-                if(seat.getIsBooked()){
-                    throw new WebApplicationException(Response.Status.FORBIDDEN);
-                }
-                else{seat.setIsBooked(true);}
+        List<Booking> bookings;
+        List<BookingDTO> results = new ArrayList<>();
+        try {
+            TypedQuery<Booking> bookingQuery = em
+                    .createQuery(
+                            "SELECT b FROM Booking b " +
+                                    "WHERE b.bookingUser = :username",
+                            Booking.class)
+                    .setParameter("username", auth.getValue());
+            bookings = bookingQuery.getResultList();
+            for (Booking booking : bookings) {
+                results.add(BookingMapper.toBookingDto(booking));
             }
-            Booking booking = new Booking();
-            booking.setConcertId(bookingRequestDTO.getConcertId());
-            booking.setDate(bookingRequestDTO.getDate());
-            booking.setSeats(seatList);
-            em.persist(booking);
-            em.getTransaction().setRollbackOnly();
-            em.getTransaction().commit();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
-        finally {
-            em.close();
-        }
+        return Response.ok().entity(results).build();
+    }
 
-        return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
+    @GET
+    @Path("/bookings/{id}")
+    public Response retrieveBookingById(@PathParam("id") long bookingId,
+                                        @CookieParam("auth") Cookie auth) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Booking> bookings;
+        BookingDTO result;
+        try {
+            TypedQuery<Booking> bookingQuery = em
+                    .createQuery(
+                            "SELECT b FROM Booking b " +
+                                    "WHERE b.id = :bookingId",
+                            Booking.class)
+                    .setParameter("bookingId", bookingId);
+            bookings = bookingQuery.getResultList();
+            if (bookings.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            Booking booking = bookings.get(0);
+            if (!booking.getBookingUser().equals(auth.getValue())) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+            result = BookingMapper.toBookingDto(booking);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return Response.ok().entity(result).build();
     }
 }
-
