@@ -75,6 +75,7 @@ public class ConcertResource {
                 throw new WebApplicationException(Response.Status.NOT_FOUND);
             }
             for (Concert concert: concertList){
+                Hibernate.initialize(concert.getDates());
                 ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
                 concertDTOList.add(concertDTO);
             }
@@ -211,6 +212,7 @@ public class ConcertResource {
     @GET
     @Path("seat/{date}")
     public Response retrieveSeats(@QueryParam("status") BookingStatus bookingStatus, @PathParam("date")String inputDate) {
+        LOGGER.info("try to retrieve seats" + inputDate);
         LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
         EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query;
@@ -244,6 +246,7 @@ public class ConcertResource {
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response booking(BookingRequestDTO bookingRequestDTO, @CookieParam("auth") String username) {
+        LOGGER.info(username);
         if (username == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
@@ -276,7 +279,6 @@ public class ConcertResource {
         finally {
             em.close();
         }
-
 
         return Response.seeOther(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
     }
