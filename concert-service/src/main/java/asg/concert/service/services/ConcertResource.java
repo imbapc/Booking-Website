@@ -8,17 +8,17 @@ import asg.concert.service.mapper.BookingMapper;
 import asg.concert.service.mapper.ConcertMapper;
 import asg.concert.service.mapper.PerformerMapper;
 import asg.concert.service.mapper.SeatMapper;
-import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -268,16 +268,17 @@ public class ConcertResource {
                     if (seat.getIsBooked()) {
                         return Response.status(Response.Status.FORBIDDEN).build();
                     } else {
+                        em.persist(seat);
                         seat.setIsBooked(true);
-			em.persist(seat);
+
                     }
                 }
 
             }
+            em.persist(booking);
             booking.setConcertId(bookingRequestDTO.getConcertId());
             booking.setDate(bookingRequestDTO.getDate());
             booking.setSeats(seatList);
-            em.persist(booking);
             em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
         }
