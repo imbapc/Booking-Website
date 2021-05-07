@@ -9,10 +9,7 @@ import asg.concert.service.mapper.SeatMapper;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
-import javax.persistence.TypedQuery;
-import javax.persistence.NoResultException;
+import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -240,5 +237,42 @@ public class ConcertResource {
             }
         }
         return Response.ok().entity(result).build();
+    }
+
+    @POST
+    @Path("bookings")
+    public Response booking(@CookieParam("auth") Cookie cookie, BookingRequestDTO bookingRequestDTO) {
+        if (cookie.getValue() == null) {
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+        }
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        TypedQuery<Seat> query;
+        List<Seat> seatList;
+        query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
+        query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
+        query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+
+        try{
+            em.getTransaction().begin();
+            seatList = (List<Seat>) query.getResultList();
+            for (Seat seat: seatList) {
+                if(seat.getIsBooked()){
+                    throw new WebApplicationException(Response.Status.FORBIDDEN);
+                }
+                else{seat.setIsBooked(true);}
+            }
+            Booking booking = new Booking();
+            booking.setConcertId(bookingRequestDTO.getConcertId());
+            booking.setDate(bookingRequestDTO.getDate());
+            booking.setSeats(seatList);
+            em.persist(booking);
+            em.getTransaction().setRollbackOnly();
+            em.getTransaction().commit();
+        }
+        finally {
+            em.close();
+        }
+
+        return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
     }
 }
