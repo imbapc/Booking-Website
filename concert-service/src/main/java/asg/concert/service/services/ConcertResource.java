@@ -241,9 +241,9 @@ public class ConcertResource {
 
     @POST
     @Path("bookings")
-    public Response booking(@CookieParam("auth") Cookie cookie, BookingRequestDTO bookingRequestDTO) {
-        if (cookie.getValue() == null) {
-            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+    public Response booking(@CookieParam("auth") Cookie auth, BookingRequestDTO bookingRequestDTO) {
+        if (auth.getValue() == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         EntityManager em = PersistenceManager.instance().createEntityManager();
         TypedQuery<Seat> query;
@@ -255,11 +255,15 @@ public class ConcertResource {
         try{
             em.getTransaction().begin();
             seatList = (List<Seat>) query.getResultList();
-            for (Seat seat: seatList) {
-                if(seat.getIsBooked()){
-                    throw new WebApplicationException(Response.Status.FORBIDDEN);
+            if (seatList.isEmpty()){return Response.status(Response.Status.NOT_FOUND).build();}
+            else{
+                for (Seat seat:seatList){
+                    if(seat.getIsBooked()){
+                        return Response.status(Response.Status.FORBIDDEN).build();
+                    }
+                    else{seat.setIsBooked(true);}
                 }
-                else{seat.setIsBooked(true);}
+
             }
             Booking booking = new Booking();
             booking.setConcertId(bookingRequestDTO.getConcertId());
