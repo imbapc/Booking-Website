@@ -222,10 +222,10 @@ public class ConcertResource {
             query = em.createQuery("select seat from Seat seat where seat.date = :date", Seat.class).setParameter("date", date);
         }
         else if (bookingStatus == BookingStatus.Booked){
-            query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true", Booking.class).setParameter("date", date);
+            query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true", Seat.class).setParameter("date", date);
         }
         else {
-            query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=false", Booking.class).setParameter("date", date);
+            query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=false", Seat.class).setParameter("date", date);
         }
         try{
             em.getTransaction().begin();
