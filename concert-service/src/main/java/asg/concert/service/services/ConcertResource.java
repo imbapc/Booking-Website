@@ -254,7 +254,7 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query;
         List<Seat> seatList;
-        query = em.createQuery("select booking from Booking booking" +  "inner join booking.seats seat" +
+        query = em.createQuery("select booking from Booking booking " +  "inner join booking.seats seat" +
                 "where booking.concertId= :concertId and booking.date= :date and seat.label IN (?1)", Booking.class)
                 .setParameter("concertId", bookingRequestDTO.getConcertId()).setParameter("date", bookingRequestDTO.getDate())
                 .setParameter("1", bookingRequestDTO.getSeatLabels());
