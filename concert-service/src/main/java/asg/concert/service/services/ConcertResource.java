@@ -247,7 +247,7 @@ public class ConcertResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response booking(@CookieParam("auth") Cookie auth, BookingRequestDTO bookingRequestDTO) {
         LOGGER.info("try to booking");
-        if (auth.getValue() == null) {
+        if (auth == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         EntityManager em = PersistenceManager.instance().createEntityManager();
