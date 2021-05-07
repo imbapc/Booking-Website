@@ -210,7 +210,7 @@ public class ConcertResource {
         return builder.status(200).build();
     }
     @GET
-    @Path("seat/{date}")
+    @Path("seats/{date}")
     public Response retrieveSeats(@QueryParam("status") BookingStatus bookingStatus, @PathParam("date")String inputDate) {
         LOGGER.info("try to retrieve seats" + inputDate);
         LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
