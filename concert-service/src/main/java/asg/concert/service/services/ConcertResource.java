@@ -269,6 +269,7 @@ public class ConcertResource {
                         return Response.status(Response.Status.FORBIDDEN).build();
                     } else {
                         seat.setIsBooked(true);
+			em.persist(seat);
                     }
                 }
 
