@@ -248,7 +248,6 @@ public class ConcertResource {
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response booking(@CookieParam("auth") Cookie auth, BookingRequestDTO bookingRequestDTO) {
-        LOGGER.info("try to booking");
         if (auth == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
@@ -296,6 +295,7 @@ public class ConcertResource {
         List<Seat> seatList;
         List<SeatDTO> seatDTOList = new ArrayList<>();
         TypedQuery<Seat> query;
+        LOGGER.info(bookingStatus);
         if (bookingStatus == "Any"){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
             query.setParameter("date", date);
