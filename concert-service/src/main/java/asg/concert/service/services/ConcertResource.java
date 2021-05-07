@@ -1,5 +1,6 @@
 package asg.concert.service.services;
 
+import asg.concert.service.jaxrs.*;
 import asg.concert.common.types.BookingStatus;
 import asg.concert.service.domain.*;
 import asg.concert.common.dto.*;
@@ -39,7 +40,7 @@ public class ConcertResource {
             concert = em.find(Concert.class, id);
             Hibernate.initialize(concert.getDates());
             if (concert == null) {
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+                throw new WebApplica    tionException(Response.Status.NOT_FOUND);
             }
             concertDTO = ConcertMapper.toDTO(concert);
             em.getTransaction().commit();
@@ -209,7 +210,8 @@ public class ConcertResource {
     }
     @GET
     @Path("seat/{date}")
-    public Response retrieveSeats(@QueryParam("status") BookingStatus bookingStatus, @PathParam("date")LocalDateTime date) {
+    public Response retrieveSeats(@QueryParam("status") BookingStatus bookingStatus, @PathParam("date")String inputDate) {
+        LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
         EntityManager em = PersistenceManager.instance().createEntityManager();
         Query query;
         List<SeatDTO> seatDTOList = new ArrayList<>();
