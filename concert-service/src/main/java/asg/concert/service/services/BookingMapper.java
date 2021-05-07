@@ -1,6 +1,7 @@
 package asg.concert.service.services;
 
 import asg.concert.common.dto.BookingDTO;
+import asg.concert.common.dto.BookingRequestDTO;
 import asg.concert.common.dto.SeatDTO;
 import asg.concert.service.domain.Booking;
 import asg.concert.service.domain.Seat;
@@ -21,8 +22,18 @@ public class BookingMapper {
     }
     
     static Booking toDomainModel(BookingRequestDTO bookingRequestDTO) {
-    	List<Seat> SeatList = new ArrayList<>();
-    	
+    	List<Seat> seatList = new ArrayList<>();
+    	List<String> labelList = bookingRequestDTO.getSeatLabels();
+    	Booking booking = new Booking();
+    	for (String label: labelList){
+    	    Seat seat = new Seat();
+    	    seat.setLabel(label);
+    	    seatList.add(seat);
+        }
+    	booking.setConcertId(bookingRequestDTO.getConcertId());
+    	booking.setDate(bookingRequestDTO.getDate());
+    	booking.setSeats(seatList);
+    	return booking;
     }
 
 }

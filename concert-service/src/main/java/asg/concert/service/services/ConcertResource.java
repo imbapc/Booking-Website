@@ -1,5 +1,6 @@
 package asg.concert.service.services;
 
+import asg.concert.common.types.BookingStatus;
 import asg.concert.service.domain.*;
 import asg.concert.common.dto.*;
 import org.hibernate.Hibernate;
@@ -8,14 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import javax.persistence.*;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.CookieParam;
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +61,7 @@ public class ConcertResource {
     public Response retrieveAllConcerts(){
         LOGGER.info("Retrieve ALl concerts");
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        Query query = em.createQuery("select concert from Concert concert");
+        Query query = em.createQuery("select concert from Concert concert", Concert.class);
 
         List<Concert> concertList;
         List<ConcertDTO> concertDTOList = new ArrayList<>();
@@ -78,6 +77,7 @@ public class ConcertResource {
                 ConcertDTO concertDTO = ConcertMapper.toDTO(concert);
                 concertDTOList.add(concertDTO);
             }
+            em.getTransaction().commit();
         }
         catch(NullPointerException e){
             return Response.status(404).build();
@@ -94,7 +94,7 @@ public class ConcertResource {
     public Response retrieveConcertSummaries() {
     	LOGGER.info("Retrieving All Concert Summaries");
     	EntityManager em = PersistenceManager.instance().createEntityManager();
-    	Query query = em.createQuery("select concert from Concert concert");
+    	Query query = em.createQuery("select concert from Concert concert", Concert.class);
     	List<Concert> concertList;
     	List<ConcertSummaryDTO> concertSummaryDTOList = new ArrayList<>();
     	try {
@@ -151,7 +151,7 @@ public class ConcertResource {
     public Response retrieveAllPerformers(){
         LOGGER.info("Retrieving all performers");
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        Query query = em.createQuery("select performer from Performer performer");
+        Query query = em.createQuery("select performer from Performer performer",Performer.class);
         List<Performer> performerList;
         List<PerformerDTO> performerDTOList = new ArrayList<>();
         try{
@@ -186,16 +186,17 @@ public class ConcertResource {
         User user = UserMapper.toDomainModel(userDTO);
         String userPassword = user.getPassword();
         Response.ResponseBuilder builder = Response.ok();
-        Query query = em.createQuery("select user from User user where user.username = :username").setParameter("username", user.getUsername());
+        Query query = em.createQuery("select user from User user where user.username = :username", User.class).setParameter("username", user.getUsername());
         User userInDB;
         try{
             em.getTransaction().begin();
 
             userInDB = (User) query.getSingleResult();
             String passwordToCheck = userInDB.getPassword();
-            if(passwordToCheck.equals(userPassword) == false){
+            if(!passwordToCheck.equals(userPassword)){
                 throw new WebApplicationException(Response.Status.UNAUTHORIZED);
             }
+            em.getTransaction().commit();
         }
         catch (NoResultException e){
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
@@ -206,16 +207,76 @@ public class ConcertResource {
         builder.cookie(new NewCookie("auth", user.toString()));
         return builder.status(200).build();
     }
+    @GET
+    @Path("seat/{date}")
+    public Response retrieveSeats(@QueryParam("status") BookingStatus bookingStatus, @PathParam("date")LocalDateTime date) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Query query;
+        List<SeatDTO> seatDTOList = new ArrayList<>();
+        List<Seat> seatList;
+        if (bookingStatus == BookingStatus.Any) {
+            query = em.createQuery("select seat from Seat seat where seat.date = :date", Seat.class).setParameter("date", date);
+        }
+        else if (bookingStatus == BookingStatus.Booked){
+            query = em.createQuery("select seat from Seat seat where seat.date = :date and seats.isBooked=true", Booking.class).setParameter("date", date);
+        }
+        else {
+            query = em.createQuery("select seat from Seat seat where seat.date = :date and seats.isBooked=false", Booking.class).setParameter("date", date);
+        }
+        try{
+            em.getTransaction().begin();
+            seatList = (List<Seat>) query.getResultList();
+            for (Seat seat: seatList){
+                SeatDTO seatDTO = SeatMapper.toDTO(seat);
+                seatDTOList.add(seatDTO);
+            }
+            em.getTransaction().commit();
+        }
+        finally{
+            em.close();
+        }
+        return Response.ok().entity(seatDTOList).build();
+    }
     
     @POST
     @Path("bookings")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response booking(BookingRequestDTO bookingRequestDTO, @CookieParam("auth") String username) {
-    	if (username == null) {
-    		return Response.seeOther(URI.create("/login")).build();
-    	}
-    	
-    	return Response.ok().build();
+        if (username == null) {
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+        }
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Query query;
+        List<Seat> seatList;
+        query = em.createQuery("select booking from Booking booking" +  "inner join booking.seats seat" +
+                "where booking.concertId= :concertId and booking.date= :date and seat.label IN (?1)", Booking.class)
+                .setParameter("concertId", bookingRequestDTO.getConcertId()).setParameter("date", bookingRequestDTO.getDate())
+                .setParameter("1", bookingRequestDTO.getSeatLabels());
+        query.setLockMode(LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+
+        try{
+            em.getTransaction().begin();
+            seatList = (List<Seat>) query.getResultList();
+            for (Seat seat: seatList) {
+                if(seat.getIsBooked()){
+                    throw new WebApplicationException(Response.Status.FORBIDDEN);
+                }
+                seat.setIsBooked(true);
+            }
+            Booking booking = new Booking();
+            booking.setConcertId(bookingRequestDTO.getConcertId());
+            booking.setDate(bookingRequestDTO.getDate());
+            booking.setSeats(seatList);
+            em.persist(booking);
+            em.getTransaction().setRollbackOnly();
+            em.getTransaction().commit();
+        }
+        finally {
+            em.close();
+        }
+
+
+        return Response.seeOther(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().toString()))).build();
     }
 }
 

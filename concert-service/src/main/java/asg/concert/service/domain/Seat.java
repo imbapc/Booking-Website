@@ -49,11 +49,11 @@ public class Seat {
         this.label = label;
     }
 
-    public boolean isBooked() {
+    public boolean getIsBooked() {
         return isBooked;
     }
 
-    public void setBooked(boolean booked) {
+    public void setIsBooked(boolean booked) {
         isBooked = booked;
     }
 

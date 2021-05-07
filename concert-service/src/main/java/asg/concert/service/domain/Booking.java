@@ -12,10 +12,16 @@ public class Booking {
     @Id
     @GeneratedValue
     private long id;
+
+    @Version
+    private long version;
     
     private long concertId;
     private LocalDateTime date;
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+
+    @org.hibernate.annotations.Fetch(
+            org.hibernate.annotations.FetchMode.SUBSELECT)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private List<Seat> seats = new ArrayList<>();
     
 
