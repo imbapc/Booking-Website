@@ -282,6 +282,7 @@ public class ConcertResource {
             booking.setSeats(seatList);
             booking.setBookingUser(auth.getValue());
             em.persist(booking);
+            em.flush();
             em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
         }
