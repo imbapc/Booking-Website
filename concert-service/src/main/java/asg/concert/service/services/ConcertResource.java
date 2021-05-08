@@ -297,7 +297,7 @@ public class ConcertResource {
         finally{
             em.close();
         }
-        return Response.created(URI.create(String.format("/concert-service/seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
+        return Response.created(URI.create(String.format("concert-service/seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
     @GET
