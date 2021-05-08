@@ -265,7 +265,7 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
             seatList = query.getResultList();
-           List<Concert> concertList = concertQuery.getResultList();
+            List<Concert> concertList = concertQuery.getResultList();
             if (concertList.isEmpty()) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
             }
@@ -276,7 +276,7 @@ public class ConcertResource {
                         currentDate = true;
                     }
                 }
-                if(! currentDate){
+                if(currentDate){
                     return Response.status(Response.Status.BAD_REQUEST).build();
                 }
                 if (seatList.isEmpty()) {
