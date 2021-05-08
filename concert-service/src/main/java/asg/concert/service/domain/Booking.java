@@ -18,6 +18,7 @@ public class Booking {
     private String bookingUser;
 
     @OneToMany(cascade = {CascadeType.MERGE})
+    @JoinTable(name = "BOOKINGS_SEAT", joinColumns = @JoinColumn(name = "BOOKINGS_ID"), inverseJoinColumns = @JoinColumn(name = "SEATS_ID"))
     private List<Seat> seats = new ArrayList<>();
 
     public Booking() {

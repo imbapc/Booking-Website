@@ -284,11 +284,8 @@ public class ConcertResource {
             booking.setBookingUser(auth.getValue());
             em.persist(booking);
             em.flush();
+            em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
-        }
-        catch (Exception e){
-            em.getTransaction().rollback();
-            return Response.status(Response.Status.FORBIDDEN).build();
         }
         finally {
             em.close();
