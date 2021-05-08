@@ -257,8 +257,8 @@ public class ConcertResource {
         List<Seat> seatList;
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
-        query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels()).setHint("org.hibernate.timeout", 10);
-        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
+        query.setLockMode(LockModeType.PESSIMISTIC_FORCE_INCREMENT);
 
         try{
             em.getTransaction().begin();
@@ -284,7 +284,6 @@ public class ConcertResource {
             booking.setBookingUser(auth.getValue());
             em.persist(booking);
             em.flush();
-            em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
         }
         finally {
