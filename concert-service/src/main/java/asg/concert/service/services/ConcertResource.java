@@ -297,7 +297,7 @@ public class ConcertResource {
         finally{
             em.close();
         }
-        return Response.created(URI.create(String.format("concert-service/booking/%s", auth.getValue()))).build();
+        return Response.created(URI.create(String.format("concert-service/booking/%s", booking.getId()))).build();
     }
 
     @GET
