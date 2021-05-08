@@ -202,8 +202,6 @@ public class ConcertResource {
                             Booking.class)
                     .setParameter("username", auth.getValue());
             bookings = bookingQuery.getResultList();
-            if (bookings.isEmpty()){}
-            LOGGER.info("Booking result for user " + auth.getValue() + " is " + bookings.toString());
             for (Booking booking : bookings) {
                 results.add(BookingMapper.toBookingDto(booking));
             }
@@ -299,7 +297,7 @@ public class ConcertResource {
         finally{
             em.close();
         }
-        return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
+        return Response.created(URI.create(String.format("/concert-service/seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
     @GET
