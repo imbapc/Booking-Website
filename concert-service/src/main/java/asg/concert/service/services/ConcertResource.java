@@ -265,10 +265,20 @@ public class ConcertResource {
         try {
             em.getTransaction().begin();
             seatList = query.getResultList();
-            Concert concert = concertQuery.getSingleResult();
-            if (concert == null) {
+           List<Concert> concertList = concertQuery.getResultList();
+            if (concertList.isEmpty()) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
-            } else {
+            }
+            else {
+                boolean currentDate = false;
+                for (Concert concert: concertList){
+                    if (concert.getDates().equals(bookingRequestDTO.getDate())){
+                        currentDate = true;
+                    }
+                }
+                if(! currentDate){
+                    return Response.status(Response.Status.BAD_REQUEST).build();
+                }
                 if (seatList.isEmpty()) {
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
