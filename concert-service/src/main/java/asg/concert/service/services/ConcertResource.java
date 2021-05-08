@@ -202,6 +202,7 @@ public class ConcertResource {
                             Booking.class)
                     .setParameter("username", auth.getValue());
             bookings = bookingQuery.getResultList();
+            if (bookings.isEmpty()){}
             LOGGER.info("Booking result for user " + auth.getValue() + " is " + bookings.toString());
             for (Booking booking : bookings) {
                 results.add(BookingMapper.toBookingDto(booking));
@@ -270,13 +271,7 @@ public class ConcertResource {
                 return Response.status(Response.Status.BAD_REQUEST).build();
             }
             else {
-                boolean currentDate = false;
-                for (Concert concert: concertList){
-                    if (concert.getDates().equals(bookingRequestDTO.getDate())){
-                        currentDate = true;
-                    }
-                }
-                if(currentDate){
+                if(! concertList.get(0).getDates().contains(bookingRequestDTO.getDate())){
                     return Response.status(Response.Status.BAD_REQUEST).build();
                 }
                 if (seatList.isEmpty()) {
