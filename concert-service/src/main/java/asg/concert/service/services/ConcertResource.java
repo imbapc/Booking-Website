@@ -202,6 +202,7 @@ public class ConcertResource {
                             Booking.class)
                     .setParameter("username", auth.getValue());
             bookings = bookingQuery.getResultList();
+            LOGGER.info("Booking result is: " + bookings.toString());
             for (Booking booking : bookings) {
                 results.add(BookingMapper.toBookingDto(booking));
             }
@@ -257,10 +258,10 @@ public class ConcertResource {
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
         query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
-        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        query.setLockMode(LockModeType.PESSIMISTIC_READ);
         try{
             em.getTransaction().begin();
-            seatList = (List<Seat>) query.getResultList();
+            seatList = query.getResultList();
             if (seatList.isEmpty()){return Response.status(Response.Status.NOT_FOUND).build();}
             else {
                 for (Seat seat : seatList) {
@@ -276,11 +277,11 @@ public class ConcertResource {
                 }
 
             }
-            em.persist(booking);
             booking.setConcertId(bookingRequestDTO.getConcertId());
             booking.setDate(bookingRequestDTO.getDate());
             booking.setSeats(seatList);
             booking.setBookingUser(auth.getValue());
+            em.persist(booking);
             em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
         }
@@ -298,7 +299,6 @@ public class ConcertResource {
         List<Seat> seatList;
         List<SeatDTO> seatDTOList = new ArrayList<>();
         TypedQuery<Seat> query;
-        LOGGER.info("BookingStatus" + bookingStatus);
         if (bookingStatus.equals(BookingStatus.Any)){
             query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
             query.setParameter("date", date);
