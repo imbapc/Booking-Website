@@ -272,6 +272,7 @@ public class ConcertResource {
                 }
                 for (Seat seat: seatList){
                     seat.setIsBooked(true);
+                    LOGGER.info("trying to merge seat");
                     em.merge(seat);
                     em.getTransaction().commit();
                     em.getTransaction().begin();
