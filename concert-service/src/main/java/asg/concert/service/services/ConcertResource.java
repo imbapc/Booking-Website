@@ -272,16 +272,17 @@ public class ConcertResource {
                 }
                 for (Seat seat: seatList){
                     seat.setIsBooked(true);
-                    LOGGER.info("trying to merge seat");
-                    em.merge(seat);
-                    em.getTransaction().commit();
-                    em.getTransaction().begin();
+                    //LOGGER.info("trying to merge seat");
+                   //em.merge(seat);
+                    //em.getTransaction().commit();
+                    //LOGGER.info("merge seat succeed");
+                    //em.getTransaction().begin();
                 }
 
             }
             booking.setConcertId(bookingRequestDTO.getConcertId());
             booking.setDate(bookingRequestDTO.getDate());
-            //booking.setSeats(seatList);
+            booking.setSeats(seatList);
             booking.setBookingUser(auth.getValue());
             em.persist(booking);
             em.flush();
