@@ -255,40 +255,44 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         TypedQuery<Seat> query;
         List<Seat> seatList;
+        TypedQuery<Concert> concertQuery = em.createQuery("select concert from Concert concert where concert.id = :concertId and concert.dates = :dates", Concert.class)
+                .setParameter("concertId", bookingRequestDTO.getConcertId())
+                .setParameter("dates", bookingRequestDTO.getDate());
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
         query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
         //query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
 
-        try{
+        try {
             em.getTransaction().begin();
             seatList = query.getResultList();
-            if (seatList.isEmpty()){return Response.status(Response.Status.NOT_FOUND).build();}
-            else {
-                for (Seat seat : seatList) {
-                    if (seat.getIsBooked()) {
-                        return Response.status(Response.Status.FORBIDDEN).build();
+            Concert concert = concertQuery.getSingleResult();
+            if (concert == null) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            } else {
+                if (seatList.isEmpty()) {
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                } else {
+                    for (Seat seat : seatList) {
+                        if (seat.getIsBooked()) {
+                            return Response.status(Response.Status.FORBIDDEN).build();
+                        }
                     }
-                }
-                for (Seat seat: seatList){
-                    seat.setIsBooked(true);
-                    //LOGGER.info("trying to merge seat");
-                   //em.merge(seat);
-                    //em.getTransaction().commit();
-                    //LOGGER.info("merge seat succeed");
-                    //em.getTransaction().begin();
-                }
+                    for (Seat seat : seatList) {
+                        seat.setIsBooked(true);
+                    }
 
+                }
+                booking.setConcertId(bookingRequestDTO.getConcertId());
+                booking.setDate(bookingRequestDTO.getDate());
+                booking.setSeats(seatList);
+                booking.setBookingUser(auth.getValue());
+                em.persist(booking);
+                em.flush();
+                em.getTransaction().commit();
             }
-            booking.setConcertId(bookingRequestDTO.getConcertId());
-            booking.setDate(bookingRequestDTO.getDate());
-            booking.setSeats(seatList);
-            booking.setBookingUser(auth.getValue());
-            em.persist(booking);
-            em.flush();
-            em.getTransaction().commit();
         }
-        finally {
+        finally{
             em.close();
         }
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
