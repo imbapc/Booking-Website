@@ -17,7 +17,7 @@ public class Booking {
     private LocalDateTime date;
     private String bookingUser;
 
-    @OneToMany(cascade = {CascadeType.ALL})
+    @OneToMany(cascade = {CascadeType.MERGE})
     @org.hibernate.annotations.Fetch(
             org.hibernate.annotations.FetchMode.SUBSELECT)
     @JoinTable(name = "BOOKINGS_SEAT", joinColumns = @JoinColumn(name = "BOOKINGS_ID"), inverseJoinColumns = @JoinColumn(name = "SEATS_ID"))

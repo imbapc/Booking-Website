@@ -278,14 +278,14 @@ public class ConcertResource {
                 }
 
             }
-            booking.setConcertId(bookingRequestDTO.getConcertId());
+            /*booking.setConcertId(bookingRequestDTO.getConcertId());
             booking.setDate(bookingRequestDTO.getDate());
             booking.setSeats(seatList);
             booking.setBookingUser(auth.getValue());
             em.persist(booking);
             em.flush();
             em.getTransaction().setRollbackOnly();
-            em.getTransaction().commit();
+            em.getTransaction().commit();*/
         }
         finally {
             em.close();
