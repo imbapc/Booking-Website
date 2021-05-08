@@ -17,7 +17,7 @@ public class Booking {
     private LocalDateTime date;
     private String bookingUser;
 
-    @OneToMany(cascade = {CascadeType.PERSIST})
+    @OneToMany(cascade = {CascadeType.MERGE})
     private List<Seat> seats = new ArrayList<>();
 
     public Booking() {
