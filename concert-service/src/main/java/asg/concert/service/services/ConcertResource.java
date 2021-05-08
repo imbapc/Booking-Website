@@ -268,8 +268,8 @@ public class ConcertResource {
                     if (seat.getIsBooked()) {
                         return Response.status(Response.Status.FORBIDDEN).build();
                     } else {
-                        em.persist(seat);
                         seat.setIsBooked(true);
+                        em.merge(seat);
                         em.getTransaction().setRollbackOnly();
                         em.getTransaction().commit();
 
