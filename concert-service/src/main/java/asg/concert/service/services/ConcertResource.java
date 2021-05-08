@@ -6,6 +6,7 @@ import asg.concert.service.mapper.BookingMapper;
 import asg.concert.service.mapper.ConcertMapper;
 import asg.concert.service.mapper.PerformerMapper;
 import asg.concert.service.mapper.SeatMapper;
+import asg.concert.service.jaxrs.LocalDateTimeParam;
 import asg.concert.service.util.TheatreLayout;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -241,7 +242,7 @@ public class ConcertResource {
         }
         return Response.ok().entity(result).build();
     }
-    
+
 	@POST
 	@Path("/subscribe/concertInfo")
 	public void subscribeConcert(@Suspended AsyncResponse response, @CookieParam("auth") Cookie auth, ConcertInfoSubscriptionDTO request) {
@@ -268,4 +269,98 @@ public class ConcertResource {
 	        }
 		}
 	}
+
+    private boolean checkConcertExists(BookingRequestDTO bookingRequestDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Concert> concerts;
+        try {
+            TypedQuery<Concert> concertsQuery = em.createQuery(
+                    "SELECT c FROM Concert c WHERE c.id = :concertId AND :concertDate member of c.dates",
+                    Concert.class)
+                    .setParameter("concertId", bookingRequestDTO.getConcertId())
+                    .setParameter("concertDate", bookingRequestDTO.getDate());
+            concerts = concertsQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return !concerts.isEmpty();
+    }
+
+    private boolean checkSeatAvailable(BookingRequestDTO bookingRequestDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<String> seatLables = bookingRequestDTO.getSeatLabels();
+        List<Booking> bookings;
+        try {
+            TypedQuery<Booking> bookingQuery = em.createQuery(
+                    "SELECT b FROM Booking b JOIN b.seats s WHERE b.concertId = :concertId AND s.label in :seatLables",
+                    Booking.class)
+                    .setParameter("concertId", bookingRequestDTO.getConcertId())
+                    .setParameter("seatLables", seatLables);
+            bookings = bookingQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return bookings.isEmpty();
+    }
+
+    private int countBookedSeats(LocalDateTime concertDate) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Seat> seats;
+
+        try {
+            TypedQuery<Seat> seatQuery = em
+                    .createQuery(
+                            "SELECT s FROM Seat s " +
+                                    "WHERE s.date = :date " +
+                                    "AND s.isBooked = true",
+                            Seat.class)
+                    .setParameter("date", concertDate);
+            seats = seatQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
+        return seats.size();
+    }
+
+    private void processSubscriber(long concertId, LocalDateTime concertDate) {
+        threadPool.submit(() -> {
+            if (subs.size() == 0) {
+                return;
+            }
+
+            synchronized (subs) {
+                int seatsBooked = countBookedSeats(concertDate);
+                int totalSeats = TheatreLayout.NUM_SEATS_IN_THEATRE;
+
+                for (Pair<AsyncResponse, ConcertInfoSubscriptionDTO> pair : subs) {
+                    ConcertInfoSubscriptionDTO concertInfoSubscriptionDTO = pair.getRight();
+                    AsyncResponse sub = pair.getLeft();
+
+                    // Concert match
+                    boolean concertMatch = concertInfoSubscriptionDTO.getConcertId() == concertId;
+
+                    // Notification threshold match
+                    double bookedPercentage = (double) seatsBooked * 100 / (double) totalSeats;
+                    int notifyPercentage = concertInfoSubscriptionDTO.getPercentageBooked();
+                    boolean thresholdMatch = bookedPercentage >= notifyPercentage;
+
+                    if (concertMatch && thresholdMatch) {
+                        int seatsRemaining = totalSeats - seatsBooked;
+                        ConcertInfoNotificationDTO concertInfoNotificationDTO = new ConcertInfoNotificationDTO(seatsRemaining);
+                        sub.resume(concertInfoNotificationDTO);
+                        subsToRemove.add(pair);
+                    }
+                }
+                subs.removeAll(subsToRemove);
+                subsToRemove.clear();
+            }
+        });
+    }
 }
