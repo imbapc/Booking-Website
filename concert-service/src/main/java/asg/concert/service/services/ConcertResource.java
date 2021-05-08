@@ -283,12 +283,12 @@ public class ConcertResource {
             booking.setBookingUser(auth.getValue());
             em.persist(booking);
             em.flush();
-            em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
         }
         finally {
             em.close();
         }
+        LOGGER.info("Booking info");
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
