@@ -271,6 +271,8 @@ public class ConcertResource {
                 for (Seat seat: seatList){
                     seat.setIsBooked(true);
                     em.merge(seat);
+                    em.getTransaction().commit();
+                    em.getTransaction().begin();
                 }
 
             }
