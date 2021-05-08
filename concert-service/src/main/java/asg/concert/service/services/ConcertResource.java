@@ -255,9 +255,9 @@ public class ConcertResource {
         EntityManager em = PersistenceManager.instance().createEntityManager();
         TypedQuery<Seat> query;
         List<Seat> seatList;
-        TypedQuery<Concert> concertQuery = em.createQuery("select concert from Concert concert where concert.id = :concertId and concert.dates = :dates", Concert.class)
+        TypedQuery<Concert> concertQuery = em.createQuery("select concert from Concert concert where concert.id = :concertId and concert.dates LIKE '%:dates%'", Concert.class)
                 .setParameter("concertId", bookingRequestDTO.getConcertId())
-                .setParameter("dates", bookingRequestDTO.getDate());
+                .setParameter("dates", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
         query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
