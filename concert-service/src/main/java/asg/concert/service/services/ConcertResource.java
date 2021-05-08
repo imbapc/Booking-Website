@@ -258,7 +258,7 @@ public class ConcertResource {
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
         query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
-        query.setLockMode(LockModeType.PESSIMISTIC_READ);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         try{
             em.getTransaction().begin();
             seatList = query.getResultList();
@@ -285,10 +285,14 @@ public class ConcertResource {
             em.flush();
             em.getTransaction().commit();
         }
+        catch (Exception e){
+            em.getTransaction().rollback();
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
         finally {
             em.close();
         }
-        LOGGER.info("Booking info");
+        LOGGER.info("Booking info" + booking.getBookingUser(), booking.getConcertId(), booking.getSeats(), booking.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
