@@ -292,7 +292,6 @@ public class ConcertResource {
         finally {
             em.close();
         }
-        LOGGER.info("Booking info" + booking.getBookingUser(), booking.getConcertId(), booking.getSeats(), booking.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
