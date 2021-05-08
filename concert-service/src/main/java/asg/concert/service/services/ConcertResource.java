@@ -177,7 +177,7 @@ public class ConcertResource {
 				em.getTransaction().commit();
 			}
 
-	        NewCookie cookie = new NewCookie("auth", userDTO.getUsername());
+	        NewCookie cookie = new NewCookie("auth", user.getUsername());
 	        return Response.ok().cookie(cookie).build();
 		} finally {
 			em.close();
@@ -202,7 +202,7 @@ public class ConcertResource {
                             Booking.class)
                     .setParameter("username", auth.getValue());
             bookings = bookingQuery.getResultList();
-            LOGGER.info("Booking result is: " + bookings.toString());
+            LOGGER.info("Booking result for user " + auth.getValue() + " is " + bookings.toString());
             for (Booking booking : bookings) {
                 results.add(BookingMapper.toBookingDto(booking));
             }
