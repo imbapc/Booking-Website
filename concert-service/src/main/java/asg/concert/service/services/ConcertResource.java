@@ -253,7 +253,6 @@ public class ConcertResource {
         }
         EntityManager em = PersistenceManager.instance().createEntityManager();
         TypedQuery<Seat> query;
-        LOGGER.info("username is" + auth.getValue());
         List<Seat> seatList;
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
@@ -267,13 +266,12 @@ public class ConcertResource {
                 for (Seat seat : seatList) {
                     if (seat.getIsBooked()) {
                         return Response.status(Response.Status.FORBIDDEN).build();
-                    } else {
-                        seat.setIsBooked(true);
-                        em.merge(seat);
-                        em.getTransaction().setRollbackOnly();
-                        em.getTransaction().commit();
-
                     }
+                }
+                for (Seat seat: seatList){
+                    seat.setIsBooked(true);
+                    em.merge(seat);
+                    em.getTransaction().commit();
                 }
 
             }
