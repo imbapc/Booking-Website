@@ -253,6 +253,7 @@ public class ConcertResource {
         }
         EntityManager em = PersistenceManager.instance().createEntityManager();
         TypedQuery<Seat> query;
+        LOGGER.info("username is" + auth.getValue());
         List<Seat> seatList;
         Booking booking = new Booking();
         query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
@@ -269,6 +270,8 @@ public class ConcertResource {
                     } else {
                         em.persist(seat);
                         seat.setIsBooked(true);
+                        em.getTransaction().setRollbackOnly();
+                        em.getTransaction().commit();
 
                     }
                 }
@@ -278,13 +281,13 @@ public class ConcertResource {
             booking.setConcertId(bookingRequestDTO.getConcertId());
             booking.setDate(bookingRequestDTO.getDate());
             booking.setSeats(seatList);
+            booking.setBookingUser(auth.getValue());
             em.getTransaction().setRollbackOnly();
             em.getTransaction().commit();
         }
         finally {
             em.close();
         }
-        LOGGER.info("Length of seats", booking.getSeats().size());
         return Response.created(URI.create(String.format("seats/%s?status=Booked", bookingRequestDTO.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))).build();
     }
 
