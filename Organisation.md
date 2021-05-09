@@ -29,7 +29,7 @@
 
   - Where `USER` is relatively separated from the other four, meaning that it is mainly used for authentication, the other four entities relationship is displayed as below:
 
-    ![image](./spec/domain-relation.png)
+    ![image](./spec/domain-relation.PNG)
 
     Some notes about the relationship:
 
