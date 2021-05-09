@@ -158,31 +158,49 @@ public class ConcertResource {
         return Response.ok().entity(dtoPerformer).build();
     }
 
-    
-	@POST
-	@Path("/login")
-	public Response login(UserDTO userDTO) {
-		EntityManager em = PersistenceManager.instance().createEntityManager();
-		try {
-			em.getTransaction().begin();
-			User user;
-			try {
-				user = em.createQuery("SELECT u FROM User u where u.username = :username AND u.password = :password", User.class)
-						.setParameter("username", userDTO.getUsername())
-						.setParameter("password", userDTO.getPassword())
-						.getSingleResult();
-			} catch (NoResultException e) { // No username-password match
-				return Response.status(Response.Status.UNAUTHORIZED).build();
-			} finally {
-				em.getTransaction().commit();
-			}
+    @POST
+    @Path("/login")
+    public Response login(UserDTO userDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        EntityTransaction tx = null;
+        List<User> userResults;
+        User matchedUser;
 
-	        NewCookie cookie = new NewCookie("auth", user.getUsername());
-	        return Response.ok().cookie(cookie).build();
-		} finally {
-			em.close();
-		}
-	}
+        // Test if user exist
+        try {
+            tx = em.getTransaction();
+            tx.begin();
+            TypedQuery<User> userQuery = em
+                    .createQuery(
+                            "select u from User u where u.username = :username",
+                            User.class)
+                    .setParameter("username", userDTO.getUsername());
+            userResults = userQuery.getResultList();
+            if (userResults.isEmpty()) {
+                return Response.status(Response.Status.UNAUTHORIZED).build();
+            } else {
+                matchedUser = userResults.get(0);
+            }
+            tx.setRollbackOnly();
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
+        // Test user password
+        if (!userDTO.getPassword().equals(matchedUser.getPassword())) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
+        // Generate cookie and return Ok
+        NewCookie cookie = new NewCookie("auth", user.getUsername());
+        return Response.ok().cookie(cookie).build();
+    }
 
     @GET
     @Path("/bookings")
@@ -245,87 +263,252 @@ public class ConcertResource {
     }
 
     @POST
-    @Path("bookings")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response booking(@CookieParam("auth") Cookie auth, BookingRequestDTO bookingRequestDTO) {
+    @Path("/bookings")
+    public Response bookConcert(BookingRequestDTO bookingRequestDTO,
+                                @CookieParam("auth") Cookie auth,
+                                @Context UriInfo uriInfo) {
         if (auth == null) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
+
+        // Check concert exists
+        if (!checkConcertExists(bookingRequestDTO)) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+
+        // Check seats available
+        if (!checkSeatAvailable(bookingRequestDTO)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+
+        long concertId = bookingRequestDTO.getConcertId();
+        LocalDateTime concertDate = bookingRequestDTO.getDate();
+        List<String> seatLabels = bookingRequestDTO.getSeatLabels();
+
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        TypedQuery<Seat> query;
-        List<Seat> seatList;
-        TypedQuery<Concert> concertQuery = em.createQuery("select concert from Concert concert where concert.id = :concertId", Concert.class)
-                .setParameter("concertId", bookingRequestDTO.getConcertId());
-        Booking booking = new Booking();
-        query = em.createQuery("select seat from Seat seat where seat.date = :date and seat.label IN (:labels)", Seat.class);
-        query.setParameter("date", bookingRequestDTO.getDate()).setParameter("labels", bookingRequestDTO.getSeatLabels());
-        //query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        EntityTransaction tx = null;
 
+        // Find seats
+        TypedQuery<Seat> seatQuery = em
+                .createQuery(
+                        "SELECT s FROM Seat s " +
+                                "WHERE s.date = :date " +
+                                "AND s.label in :seatLabels",
+                        Seat.class)
+                .setParameter("date", concertDate)
+                .setParameter("seatLabels", seatLabels);
+        List<Seat> seats = seatQuery.getResultList();
+
+        // Set seats to be booked
+        for (Seat seat : seats) {
+            seat.setBooked(true);
+        }
+
+        // Create booking and link to seats
+        Booking booking = new Booking(concertId, concertDate, auth.getValue(), seats);
+
+        // Persist booking
         try {
-            em.getTransaction().begin();
-            seatList = query.getResultList();
-            List<Concert> concertList = concertQuery.getResultList();
-            if (concertList.isEmpty()) {
-                return Response.status(Response.Status.BAD_REQUEST).build();
+            tx = em.getTransaction();
+            tx.begin();
+            em.persist(booking);
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
             }
-            else {
-                if(! concertList.get(0).getDates().contains(bookingRequestDTO.getDate())){
-                    return Response.status(Response.Status.BAD_REQUEST).build();
-                }
-                if (seatList.isEmpty()) {
-                    return Response.status(Response.Status.NOT_FOUND).build();
-                } else {
-                    for (Seat seat : seatList) {
-                        if (seat.getIsBooked()) {
-                            return Response.status(Response.Status.FORBIDDEN).build();
-                        }
-                    }
-                    for (Seat seat : seatList) {
-                        seat.setIsBooked(true);
-                    }
+            if (em.isOpen()) {
+                em.close();
+            }
+        }
 
-                }
-                booking.setConcertId(bookingRequestDTO.getConcertId());
-                booking.setDate(bookingRequestDTO.getDate());
-                booking.setSeats(seatList);
-                booking.setBookingUser(auth.getValue());
-                em.persist(booking);
-                em.flush();
-                em.getTransaction().commit();
-            }
-        }
-        finally{
-            em.close();
-        }
-        return Response.created(URI.create(String.format("concert-service/bookings/%s", booking.getId()))).build();
+        // Notify subs if there is any
+        processSubscriber(concertId, concertDate);
+
+        URI bookingUri = URI.create(uriInfo.getRequestUri() + "/" + booking.getId());
+        return Response.created(bookingUri).build();
     }
 
     @GET
-    @Path("seats/{date}")
-    public Response retrieveSeats(@PathParam("date") String inputDate, @QueryParam("status") BookingStatus bookingStatus){
+    @Path("/seats/{date}")
+    public Response retrieveBookedSeats(@PathParam("date") String dateTime,
+                                        @QueryParam("status") String status) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        LocalDateTime date = new LocalDateTimeParam(inputDate).getLocalDateTime();
-        List<Seat> seatList;
-        List<SeatDTO> seatDTOList = new ArrayList<>();
-        TypedQuery<Seat> query;
-        if (bookingStatus.equals(BookingStatus.Any)){
-            query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date");
-            query.setParameter("date", date);
+
+        // Set query
+        LocalDateTime dateToQuery = LocalDateTime.parse(dateTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        TypedQuery<Seat> seatQuery;
+
+        if (status.equals("Any")) {
+            seatQuery = em
+                    .createQuery("SELECT s FROM Seat s WHERE s.date = :date", Seat.class)
+                    .setParameter("date", dateToQuery);
+        } else {
+            seatQuery = em
+                    .createQuery(
+                            "SELECT s FROM Seat s WHERE s.date = :date AND s.isBooked = :isBooked", Seat.class)
+                    .setParameter("date", dateToQuery)
+                    .setParameter("isBooked", status.equals("Booked"));
         }
-        else if(bookingStatus.equals(BookingStatus.Booked)){
-            query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=true");
-            query.setParameter("date", date);
+
+        // retrieve seats in a given date
+        List<Seat> seatsResult;
+        EntityTransaction tx = null;
+        List<SeatDTO> result = new ArrayList<>();
+        try {
+            tx = em.getTransaction();
+            tx.begin();
+            seatsResult = seatQuery.getResultList();
+            for (Seat seat : seatsResult) {
+                result.add(SeatMapper.toSeatDto(seat));
+            }
+            tx.setRollbackOnly();
+            tx.commit();
+        } finally {
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+            }
+            if (em.isOpen()) {
+                em.close();
+            }
         }
-        else{
-            query = (TypedQuery<Seat>) em.createQuery("select seat from Seat seat where seat.date = :date and seat.isBooked=false");
-            query.setParameter("date", date);
-        }
-        seatList = query.getResultList();
-        for (Seat seat: seatList){
-            SeatDTO seatDTO = SeatMapper.toSeatDto(seat);
-            seatDTOList.add(seatDTO);
-        }
-        return Response.ok().entity(seatDTOList).build();
+        return Response.ok().entity(result).build();
     }
 
+    @POST
+    @Path("/subscribe/concertInfo")
+    public void subscribeConcertInfo(ConcertInfoSubscriptionDTO concertInfoSubscriptionDTO,
+                                     @CookieParam("auth") Cookie auth,
+                                     @Suspended AsyncResponse sub) {
+        // Check login status
+        if (auth == null) {
+            sub.resume(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
+
+        long concertId = concertInfoSubscriptionDTO.getConcertId();
+        LocalDateTime targetDate = concertInfoSubscriptionDTO.getDate();
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        Concert concert;
+        boolean concertExist = true;
+        boolean legalDate = true;
+        try {
+            concert = em.find(Concert.class, concertId);
+            if (concert == null) {
+                // Concert doesn't exist
+                concertExist = false;
+            } else if (!concert.getDates().contains(targetDate)) {
+                // Concert date is illegal
+                legalDate = false;
+            }
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
+        if (concertExist && legalDate) {
+            // Subscribe
+            synchronized (subs) {
+                subs.add(Pair.of(sub, concertInfoSubscriptionDTO));
+            }
+        } else {
+            // Resume with BAD_REQUEST status
+            sub.resume(Response.status(Response.Status.BAD_REQUEST).build());
+        }
+    }
+
+    private boolean checkConcertExists(BookingRequestDTO bookingRequestDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Concert> concerts;
+        try {
+            TypedQuery<Concert> concertsQuery = em.createQuery(
+                    "SELECT c FROM Concert c WHERE c.id = :concertId AND :concertDate member of c.dates",
+                    Concert.class)
+                    .setParameter("concertId", bookingRequestDTO.getConcertId())
+                    .setParameter("concertDate", bookingRequestDTO.getDate());
+            concerts = concertsQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return !concerts.isEmpty();
+    }
+
+    private boolean checkSeatAvailable(BookingRequestDTO bookingRequestDTO) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<String> seatLables = bookingRequestDTO.getSeatLabels();
+        List<Booking> bookings;
+        try {
+            TypedQuery<Booking> bookingQuery = em.createQuery(
+                    "SELECT b FROM Booking b JOIN b.seats s WHERE b.concertId = :concertId AND s.label in :seatLables",
+                    Booking.class)
+                    .setParameter("concertId", bookingRequestDTO.getConcertId())
+                    .setParameter("seatLables", seatLables);
+            bookings = bookingQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+        return bookings.isEmpty();
+    }
+
+    private int countBookedSeats(LocalDateTime concertDate) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        List<Seat> seats;
+
+        try {
+            TypedQuery<Seat> seatQuery = em
+                    .createQuery(
+                            "SELECT s FROM Seat s " +
+                                    "WHERE s.date = :date " +
+                                    "AND s.isBooked = true",
+                            Seat.class)
+                    .setParameter("date", concertDate);
+            seats = seatQuery.getResultList();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+
+        return seats.size();
+    }
+
+    private void processSubscriber(long concertId, LocalDateTime concertDate) {
+        threadPool.submit(() -> {
+            if (subs.size() == 0) {
+                return;
+            }
+
+            synchronized (subs) {
+                int seatsBooked = countBookedSeats(concertDate);
+                int totalSeats = TheatreLayout.NUM_SEATS_IN_THEATRE;
+
+                for (Pair<AsyncResponse, ConcertInfoSubscriptionDTO> pair : subs) {
+                    ConcertInfoSubscriptionDTO concertInfoSubscriptionDTO = pair.getRight();
+                    AsyncResponse sub = pair.getLeft();
+
+                    // Concert match
+                    boolean concertMatch = concertInfoSubscriptionDTO.getConcertId() == concertId;
+
+                    // Notification threshold match
+                    double bookedPercentage = (double) seatsBooked * 100 / (double) totalSeats;
+                    int notifyPercentage = concertInfoSubscriptionDTO.getPercentageBooked();
+                    boolean thresholdMatch = bookedPercentage >= notifyPercentage;
+
+                    if (concertMatch && thresholdMatch) {
+                        int seatsRemaining = totalSeats - seatsBooked;
+                        ConcertInfoNotificationDTO concertInfoNotificationDTO = new ConcertInfoNotificationDTO(seatsRemaining);
+                        sub.resume(concertInfoNotificationDTO);
+                        subsToRemove.add(pair);
+                    }
+                }
+                subs.removeAll(subsToRemove);
+                subsToRemove.clear();
+            }
+        });
+    }
 }

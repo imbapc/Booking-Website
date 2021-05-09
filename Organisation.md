@@ -1,12 +1,17 @@
 - Summary of team works:
 
-  - Jiakai Li: Discussed about the domain model and implemented in the code (including some necessary changes to the class and also related annotations)
-
-  **To be filled**
-
+  - Jiakai Li:
+      - Discussed the domain model and implemented in the code (including some necessary changes to the class and also related annotations)
+      - Worked on implementation of the async sub/pub requests 
+      - Worked on all different things and test cases in a separate branch (jiakai-li-branch) and fix master bug at the end
+  
+  
+  - Frederick Hy:
+      - Worked on implementation of concertresource
+  
 - Strategy to minimize the chance of concurrency errors
-
-  **To be filled**
+  - In different implementations, we used transactions to separate operations from different users. Especially for `POST` requests
+  - When dealing with publish, we used `synchronized (subs)` to lock the `subs` object and prevent from concurrency errors
 
 - Domain model
 
