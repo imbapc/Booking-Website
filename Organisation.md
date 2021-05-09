@@ -8,6 +8,10 @@
   
   - Frederick Hy:
       - Worked on implementation of concertresource
+
+  - Daniel Hong:
+       - Initialize functions in concertresourse and fix all the bugs with the help of Fredrick.
+       - Worked on the Mapper Class
   
 - Strategy to minimize the chance of concurrency errors
   - In different implementations, we used transactions to separate operations from different users. Especially for `POST` requests
